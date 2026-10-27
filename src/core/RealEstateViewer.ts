@@ -93,8 +93,9 @@ export class RealEstateViewer {
 
     // Initialize Furniture & Decor Manager
     this.furniture = new FurnitureManager(this.scene, this.camera, this.renderer.domElement, this.emitter);
-    // Pause camera rotation while dragging furniture items
-    this.cameraController.isInteractionBlocked = () => this.furniture.isInteracting();
+    // Pause camera rotation while dragging furniture items or while GLB free exploration is active
+    this.cameraController.isInteractionBlocked = () =>
+      this.furniture.isInteracting() || (this.glbFreeController && this.glbFreeController.isActive);
     this.glbFreeController.isInteractionBlocked = () => this.furniture.isInteracting();
 
     // Sync door opening progress with scroll walkthrough

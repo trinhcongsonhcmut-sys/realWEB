@@ -1,67 +1,90 @@
 import * as THREE from 'three';
-import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { EventEmitter } from '../core/EventEmitter';
 
 export class GlbFreeExplorationController {
   public camera: THREE.PerspectiveCamera;
   public domElement: HTMLElement;
   public emitter: EventEmitter;
-  public controls: OrbitControls;
 
   public isActive: boolean = false;
   public isTransitioning: boolean = false;
 
+  // Station / Camera eye position
+  public position: THREE.Vector3 = new THREE.Vector3(0.0, 1.65, 0.5);
+
+  // Euler angles with 'YXZ' order for gimbal-lock-free 360 in-place rotation
+  public currentYaw: number = 0;
+  public targetYaw: number = 0;
+  public currentPitch: number = 0;
+  public targetPitch: number = 0;
+
+  // Sensitivity and responsiveness tuning
+  public lookSensitivity: number = 0.0032;
+  public dampingFactor: number = 22.0; // Rapid, silky damping - stops in ~150ms with zero unwanted inertia drift
+  public moveSpeed: number = 2.8; // Natural walking speed (m/s)
+  public panSpeed: number = 0.004;
+
+  // Pointer drag state
+  private isPointerDown: boolean = false;
+  private pointerButton: number = 0; // 0 = rotate 360, 2 = pan
+  private prevPointerX: number = 0;
+  private prevPointerY: number = 0;
+
   // Keyboard navigation
   private keysPressed: Set<string> = new Set();
-  public moveSpeed: number = 3.2; // meters/sec
   public isInteractionBlocked?: () => boolean;
 
-  // Transition tweening
+  // Smooth transition tweening when entering
   private transitionStartPos: THREE.Vector3 = new THREE.Vector3();
   private transitionEndPos: THREE.Vector3 = new THREE.Vector3();
-  private transitionStartTarget: THREE.Vector3 = new THREE.Vector3();
-  private transitionEndTarget: THREE.Vector3 = new THREE.Vector3();
+  private transitionStartYaw: number = 0;
+  private transitionEndYaw: number = 0;
+  private transitionStartPitch: number = 0;
+  private transitionEndPitch: number = 0;
   private transitionStartTime: number = 0;
-  private transitionDuration: number = 950;
+  private transitionDuration: number = 750; // ms
 
-  // Reusable vectors for performance
-  private tempDir: THREE.Vector3 = new THREE.Vector3();
+  // Reusable vectors for zero garbage-collection overhead
+  private tempForward: THREE.Vector3 = new THREE.Vector3();
   private tempRight: THREE.Vector3 = new THREE.Vector3();
   private moveVec: THREE.Vector3 = new THREE.Vector3();
 
-  // Default living room vantage point & center target
+  // Living room safe bounds (4.8m wide x 10m deep) with 35cm wall safety margin
+  public static readonly ROOM_BOUNDS = {
+    minX: -2.0,
+    maxX: 2.0,
+    minY: 1.15,
+    maxY: 2.1,
+    minZ: -8.1,
+    maxZ: 0.65
+  };
+
+  // Default living room vantage point & center look target
   public static readonly DEFAULT_ROOM_POSITION = new THREE.Vector3(0.0, 1.65, 0.5);
-  public static readonly DEFAULT_ROOM_TARGET = new THREE.Vector3(0.0, 1.25, -2.4);
+  public static readonly DEFAULT_ROOM_TARGET = new THREE.Vector3(0.0, 1.35, -2.5);
 
   constructor(camera: THREE.PerspectiveCamera, domElement: HTMLElement, emitter: EventEmitter) {
     this.camera = camera;
     this.domElement = domElement;
     this.emitter = emitter;
 
-    // Initialize Three.js OrbitControls
-    this.controls = new OrbitControls(this.camera, this.domElement);
-    this.controls.enableDamping = true;
-    this.controls.dampingFactor = 0.06;
-    this.controls.screenSpacePanning = true; // Right-click pans laterally & vertically
-    this.controls.minDistance = 0.15; // Allows inspecting fine furniture textures
-    this.controls.maxDistance = 35.0;
-    this.controls.rotateSpeed = 0.75;
-    this.controls.panSpeed = 0.85;
-    this.controls.zoomSpeed = 1.0;
-    this.controls.minPolarAngle = 0.01; // Can look straight up at ceiling & chandelier
-    this.controls.maxPolarAngle = Math.PI - 0.01; // Can look straight down at flooring & rug
-
-    // Start disabled until user activates "Khám phá ngay"
-    this.controls.enabled = false;
+    this.position.copy(GlbFreeExplorationController.DEFAULT_ROOM_POSITION);
 
     this.bindEvents();
   }
 
   private bindEvents(): void {
+    this.domElement.addEventListener('pointerdown', this.onPointerDown);
+    window.addEventListener('pointermove', this.onPointerMove);
+    window.addEventListener('pointerup', this.onPointerUp);
+    window.addEventListener('pointercancel', this.onPointerUp);
+
+    this.domElement.addEventListener('wheel', this.onWheel, { passive: false });
+    this.domElement.addEventListener('contextmenu', this.onContextMenu);
+
     window.addEventListener('keydown', this.onKeyDown);
     window.addEventListener('keyup', this.onKeyUp);
     window.addEventListener('blur', this.onWindowBlur);
-    this.domElement.addEventListener('contextmenu', this.onContextMenu);
   }
 
   private onContextMenu = (e: MouseEvent) => {
@@ -70,10 +93,68 @@ export class GlbFreeExplorationController {
     }
   };
 
-  private onKeyDown = (e: KeyboardEvent) => {
-    if (!this.isActive) return;
+  private onPointerDown = (e: PointerEvent) => {
+    if (!this.isActive || this.isTransitioning) return;
+    if (this.isInteractionBlocked && this.isInteractionBlocked()) return;
 
-    // Ignore if typing inside input, textarea or search
+    this.isPointerDown = true;
+    this.pointerButton = e.button;
+    this.prevPointerX = e.clientX;
+    this.prevPointerY = e.clientY;
+  };
+
+  private onPointerMove = (e: PointerEvent) => {
+    if (!this.isActive || !this.isPointerDown || this.isTransitioning) return;
+    if (this.isInteractionBlocked && this.isInteractionBlocked()) return;
+
+    const deltaX = e.clientX - this.prevPointerX;
+    const deltaY = e.clientY - this.prevPointerY;
+    this.prevPointerX = e.clientX;
+    this.prevPointerY = e.clientY;
+
+    if (this.pointerButton === 2) {
+      // PAN (Right-click drag): Strafe camera laterally and vertically
+      this.getHorizontalDirections(this.tempForward, this.tempRight);
+
+      this.position.addScaledVector(this.tempRight, -deltaX * this.panSpeed);
+      this.position.y += deltaY * this.panSpeed;
+      this.clampRoomBounds();
+    } else {
+      // FIRST-PERSON 360 LOOK (Left-click drag):
+      // Camera turns in-place around user's own viewpoint (Orbit radius R = 0).
+      // Camera coordinates do not move, preventing clipping through any walls!
+      this.targetYaw -= deltaX * this.lookSensitivity;
+      this.targetPitch -= deltaY * this.lookSensitivity;
+
+      // Clamp vertical pitch [-82°, +82°] so user can look straight up at ceiling lights and down at floor
+      const maxPitch = Math.PI * 0.45;
+      const minPitch = -Math.PI * 0.45;
+      this.targetPitch = Math.max(minPitch, Math.min(maxPitch, this.targetPitch));
+    }
+  };
+
+  private onPointerUp = () => {
+    this.isPointerDown = false;
+  };
+
+  private onWheel = (e: WheelEvent) => {
+    if (!this.isActive || this.isTransitioning) return;
+    if (this.isInteractionBlocked && this.isInteractionBlocked()) return;
+
+    e.preventDefault();
+
+    // Wheel up (deltaY < 0): walk forward into room
+    // Wheel down (deltaY > 0): step backward
+    this.getHorizontalDirections(this.tempForward, this.tempRight);
+    const step = -Math.sign(e.deltaY) * 0.35;
+    this.position.addScaledVector(this.tempForward, step);
+    this.clampRoomBounds();
+  };
+
+  private onKeyDown = (e: KeyboardEvent) => {
+    if (!this.isActive || this.isTransitioning) return;
+    if (this.isInteractionBlocked && this.isInteractionBlocked()) return;
+
     const active = document.activeElement as HTMLElement;
     if (active && (active.tagName === 'INPUT' || active.tagName === 'TEXTAREA')) return;
 
@@ -87,10 +168,29 @@ export class GlbFreeExplorationController {
 
   private onWindowBlur = () => {
     this.keysPressed.clear();
+    this.isPointerDown = false;
   };
 
   /**
-   * Activates full 360 GLB Free Exploration Mode inside the room.
+   * Calculates horizontal forward and right unit vectors from current camera Yaw.
+   */
+  private getHorizontalDirections(outForward: THREE.Vector3, outRight: THREE.Vector3): void {
+    outForward.set(-Math.sin(this.currentYaw), 0, -Math.cos(this.currentYaw)).normalize();
+    outRight.set(Math.cos(this.currentYaw), 0, -Math.sin(this.currentYaw)).normalize();
+  }
+
+  /**
+   * Enforces strict room boundaries so camera never clips or walks outside walls.
+   */
+  private clampRoomBounds(): void {
+    const b = GlbFreeExplorationController.ROOM_BOUNDS;
+    this.position.x = Math.max(b.minX, Math.min(b.maxX, this.position.x));
+    this.position.y = Math.max(b.minY, Math.min(b.maxY, this.position.y));
+    this.position.z = Math.max(b.minZ, Math.min(b.maxZ, this.position.z));
+  }
+
+  /**
+   * Activates First-Person 360 Free Exploration Mode inside the room.
    */
   public enter(
     targetPos: THREE.Vector3 = GlbFreeExplorationController.DEFAULT_ROOM_POSITION,
@@ -99,47 +199,61 @@ export class GlbFreeExplorationController {
   ): void {
     this.isActive = true;
     this.keysPressed.clear();
+    this.isPointerDown = false;
+
+    // Calculate target Yaw and Pitch looking from targetPos to targetLookAt
+    const dir = targetLookAt.clone().sub(targetPos).normalize();
+    const destYaw = Math.atan2(-dir.x, -dir.z);
+    const destPitch = Math.asin(Math.max(-1, Math.min(1, dir.y)));
 
     if (animate) {
       this.isTransitioning = true;
       this.transitionStartTime = performance.now();
-      this.transitionDuration = 900;
+      this.transitionDuration = 750;
 
       this.transitionStartPos.copy(this.camera.position);
       this.transitionEndPos.copy(targetPos);
 
-      // Current look target from camera forward direction
-      const currentDir = new THREE.Vector3();
-      this.camera.getWorldDirection(currentDir);
-      this.transitionStartTarget.copy(this.camera.position).addScaledVector(currentDir, 4.0);
-      this.transitionEndTarget.copy(targetLookAt);
+      // Get current camera Yaw and Pitch
+      const curDir = new THREE.Vector3();
+      this.camera.getWorldDirection(curDir);
+      this.transitionStartYaw = Math.atan2(-curDir.x, -curDir.z);
+      this.transitionStartPitch = Math.asin(Math.max(-1, Math.min(1, curDir.y)));
 
-      this.controls.enabled = false;
+      // Ensure shortest angular interpolation path
+      let diffYaw = destYaw - this.transitionStartYaw;
+      while (diffYaw < -Math.PI) diffYaw += Math.PI * 2;
+      while (diffYaw > Math.PI) diffYaw -= Math.PI * 2;
+      this.transitionEndYaw = this.transitionStartYaw + diffYaw;
+      this.transitionEndPitch = destPitch;
     } else {
-      this.camera.position.copy(targetPos);
-      this.controls.target.copy(targetLookAt);
-      this.camera.lookAt(targetLookAt);
-      this.controls.enabled = true;
-      this.controls.update();
+      this.position.copy(targetPos);
+      this.clampRoomBounds();
+
+      this.currentYaw = destYaw;
+      this.targetYaw = destYaw;
+      this.currentPitch = destPitch;
+      this.targetPitch = destPitch;
+
+      this.camera.position.copy(this.position);
+      this.camera.rotation.order = 'YXZ';
+      this.camera.rotation.set(this.currentPitch, this.currentYaw, 0);
     }
 
     this.emitter.emit('camera:free-glb-mode-changed', true);
   }
 
   /**
-   * Deactivates GLB Free Exploration Mode.
+   * Deactivates Free Exploration Mode.
    */
   public exit(): void {
     this.isActive = false;
     this.isTransitioning = false;
-    this.controls.enabled = false;
+    this.isPointerDown = false;
     this.keysPressed.clear();
     this.emitter.emit('camera:free-glb-mode-changed', false);
   }
 
-  /**
-   * Focuses camera on a specific object or point while in free exploration.
-   */
   public focusPoint(pos: THREE.Vector3, lookAt: THREE.Vector3): void {
     this.enter(pos, lookAt, true);
   }
@@ -151,51 +265,39 @@ export class GlbFreeExplorationController {
     if (this.isTransitioning) {
       const elapsed = performance.now() - this.transitionStartTime;
       const progress = Math.min(1.0, elapsed / this.transitionDuration);
-      // Ease out cubic
-      const eased = 1 - Math.pow(1 - progress, 3);
+      // Smooth Hermite easing
+      const eased = progress * progress * (3 - 2 * progress);
 
-      this.camera.position.lerpVectors(this.transitionStartPos, this.transitionEndPos, eased);
-      const currentLook = new THREE.Vector3().lerpVectors(
-        this.transitionStartTarget,
-        this.transitionEndTarget,
-        eased
-      );
-      this.camera.lookAt(currentLook);
+      this.position.lerpVectors(this.transitionStartPos, this.transitionEndPos, eased);
+      this.currentYaw = THREE.MathUtils.lerp(this.transitionStartYaw, this.transitionEndYaw, eased);
+      this.currentPitch = THREE.MathUtils.lerp(this.transitionStartPitch, this.transitionEndPitch, eased);
+      this.targetYaw = this.currentYaw;
+      this.targetPitch = this.currentPitch;
+
+      this.camera.position.copy(this.position);
+      this.camera.rotation.order = 'YXZ';
+      this.camera.rotation.set(this.currentPitch, this.currentYaw, 0);
 
       if (progress >= 1.0) {
         this.isTransitioning = false;
-        this.controls.target.copy(this.transitionEndTarget);
-        this.controls.enabled = true;
-        this.controls.update();
+        this.clampRoomBounds();
       }
       return;
-    }
-
-    // Check if external module (e.g. dragging furniture) temporarily blocks orbit
-    if (this.isInteractionBlocked && this.isInteractionBlocked()) {
-      this.controls.enabled = false;
-      return;
-    } else {
-      this.controls.enabled = true;
     }
 
     // 2. Keyboard Navigation (WASD / Arrows / Space / Shift / Q / E / C)
     if (this.keysPressed.size > 0) {
-      this.camera.getWorldDirection(this.tempDir);
-      this.tempDir.y = 0;
-      this.tempDir.normalize();
-
-      this.tempRight.crossVectors(this.tempDir, this.camera.up).normalize();
+      this.getHorizontalDirections(this.tempForward, this.tempRight);
       this.moveVec.set(0, 0, 0);
 
       const isSprint = this.keysPressed.has('ShiftLeft') || this.keysPressed.has('ShiftRight');
-      const currentSpeed = this.moveSpeed * (isSprint ? 2.0 : 1.0) * delta;
+      const currentSpeed = this.moveSpeed * (isSprint ? 1.75 : 1.0) * delta;
 
       if (this.keysPressed.has('KeyW') || this.keysPressed.has('ArrowUp')) {
-        this.moveVec.add(this.tempDir);
+        this.moveVec.add(this.tempForward);
       }
       if (this.keysPressed.has('KeyS') || this.keysPressed.has('ArrowDown')) {
-        this.moveVec.sub(this.tempDir);
+        this.moveVec.sub(this.tempForward);
       }
       if (this.keysPressed.has('KeyA') || this.keysPressed.has('ArrowLeft')) {
         this.moveVec.sub(this.tempRight);
@@ -212,21 +314,34 @@ export class GlbFreeExplorationController {
 
       if (this.moveVec.lengthSq() > 0) {
         this.moveVec.normalize().multiplyScalar(currentSpeed);
-        this.camera.position.add(this.moveVec);
-        this.controls.target.add(this.moveVec);
+        this.position.add(this.moveVec);
+        this.clampRoomBounds();
       }
     }
 
-    // 3. Update Orbit Controls damping and position
-    this.controls.update();
+    // 3. Smooth First-Person 360 Look Damping
+    const damp = Math.min(1.0, delta * this.dampingFactor);
+    this.currentYaw += (this.targetYaw - this.currentYaw) * damp;
+    this.currentPitch += (this.targetPitch - this.currentPitch) * damp;
+
+    // 4. Update Camera Position & Rotation directly (Pivot point is user's eye, Radius = 0)
+    this.camera.position.copy(this.position);
+    this.camera.rotation.order = 'YXZ';
+    this.camera.rotation.set(this.currentPitch, this.currentYaw, 0);
   }
 
   public dispose(): void {
     this.exit();
-    this.controls.dispose();
+    this.domElement.removeEventListener('pointerdown', this.onPointerDown);
+    window.removeEventListener('pointermove', this.onPointerMove);
+    window.removeEventListener('pointerup', this.onPointerUp);
+    window.removeEventListener('pointercancel', this.onPointerUp);
+
+    this.domElement.removeEventListener('wheel', this.onWheel);
+    this.domElement.removeEventListener('contextmenu', this.onContextMenu);
+
     window.removeEventListener('keydown', this.onKeyDown);
     window.removeEventListener('keyup', this.onKeyUp);
     window.removeEventListener('blur', this.onWindowBlur);
-    this.domElement.removeEventListener('contextmenu', this.onContextMenu);
   }
 }

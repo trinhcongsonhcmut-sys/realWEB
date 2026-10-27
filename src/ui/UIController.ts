@@ -3,12 +3,21 @@ import { EventEmitter } from '../core/EventEmitter';
 import { RealEstateViewer } from '../core/RealEstateViewer';
 import { HouseSelectorUI } from './HouseSelectorUI';
 import { WaypointTunerUI } from './WaypointTunerUI';
+import { DynamicCustomizerStore, CustomColorOption, CustomMaterialOption } from '../staging/DynamicCustomizerStore';
+import { TextureLoaderService } from '../staging/TextureLoaderService';
 
 export class UIController {
   private container: HTMLElement;
   private propertyData: PropertyMetadata;
   private emitter: EventEmitter;
   private viewer: RealEstateViewer;
+
+  // Customizer Store & Selected Item
+  private customizerStore: DynamicCustomizerStore = new DynamicCustomizerStore();
+  private currentInspectedItem: { mesh?: any; itemKey: string; name: string; category?: string; description?: string } | null = null;
+  private addColorModalEl!: HTMLElement;
+  private addMaterialModalEl!: HTMLElement;
+  private selectedMaterialFile: File | null = null;
 
   // Modular Sub-components (optional)
   public houseSelectorUI?: HouseSelectorUI;
@@ -211,7 +220,7 @@ export class UIController {
     this.overlayEl.appendChild(this.customizerPanelEl);
 
     // 4b. Furniture & Decor Picker Popup
-    // 4b. Living Room Furniture Inspector Popup
+    // 4b. Living Room Furniture Customizer & Inspector Popup
     this.furniturePopupEl = document.createElement('div');
     this.furniturePopupEl.id = 'furniture-popup';
     this.furniturePopupEl.className = 'furniture-popup glass-panel hud-interactive scrollable-ui';
@@ -224,39 +233,199 @@ export class UIController {
             <line x1="12" y1="8" x2="12" y2="16"></line>
             <line x1="8" y1="12" x2="16" y2="12"></line>
           </svg>
-          <span>Nội Thất Phòng Khách Living Room</span>
+          <span id="furn-popup-header-title">Tùy Biến Đồ Nội Thất</span>
         </div>
         <button id="btn-close-furniture-popup" class="modal-close-btn" title="Đóng">✕</button>
       </div>
 
       <div class="furniture-item-card">
         <div class="furniture-badge-row">
-          <span class="furniture-badge" id="furn-item-category">Sofa & Ghế ngồi</span>
+          <span class="furniture-badge" id="furn-item-category">Hệ thống chiếu sáng</span>
           <span class="furniture-status">✨ Đang chọn</span>
         </div>
-        <h4 class="furniture-card-title" id="furn-item-name">Bộ Sofa nỉ Bắc Âu Scandinavian</h4>
+        <h4 class="furniture-card-title" id="furn-item-name">Đèn Cây Đứng Wabi-Sabi Độc Bản</h4>
         <p class="furniture-card-desc" id="furn-item-desc">
-          Bộ sofa nỉ cao cấp đệm mút D40 êm ái, bọc vải sợi tự nhiên thoáng mát, tôn vinh nét thẩm mỹ tối giản sang trọng của phòng khách.
+          Đèn cây đứng cao 1.6m chao giấy thủ công, điểm nhấn ánh sáng nghệ thuật cho góc thư giãn đọc sách.
         </p>
-        <div class="furniture-actions-row">
-          <button id="btn-focus-livingroom" class="btn btn-gold btn-sm" title="Chiếu camera vào tâm phòng khách xoay 360 độ">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <circle cx="12" cy="12" r="3"></circle>
-              <path d="M3 7V5a2 2 0 0 1 2-2h2M17 3h2a2 2 0 0 1 2 2v2M21 17v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2"></path>
-            </svg>
-            <span>Xoay 360° Phòng Khách</span>
+      </div>
+
+      <!-- SECTION 1: MÀU SẮC ĐỒ VẬT -->
+      <div class="furn-custom-section">
+        <div class="furn-section-header">
+          <div class="furn-section-title">
+            <span>🎨</span>
+            <span>Màu Sắc Đồ Vật</span>
+          </div>
+          <button id="btn-open-add-color" class="btn btn-xs" title="Thêm màu mới vào danh sách đồ vật này">
+            <span>+ Thêm màu sắc</span>
           </button>
+        </div>
+        <div class="furn-swatch-list" id="furn-colors-list">
+          <!-- Rendered dynamically -->
         </div>
       </div>
 
-      <div class="furniture-guide-box">
-        <p>💡 <b>Tương tác đồ nội thất:</b></p>
-        <p style="font-size: 0.82rem; color: #94a3b8; margin: 4px 0 0 0; line-height: 1.45;">
-          Bấm chuột trái vào bất kỳ vật phẩm nào trong phòng (Sofa, Bàn trà, Đèn chùm, Kệ Tivi, Thảm, Tranh...) để xem thông số và chi tiết.
-        </p>
+      <!-- SECTION 2: CHẤT LIỆU & VÂN PBR -->
+      <div class="furn-custom-section">
+        <div class="furn-section-header">
+          <div class="furn-section-title">
+            <span>✨</span>
+            <span>Chất Liệu & Vân PBR</span>
+          </div>
+          <button id="btn-open-add-material" class="btn btn-xs" title="Tải ảnh vân vật liệu mới từ máy tính">
+            <span>+ Thêm vật liệu</span>
+          </button>
+        </div>
+        <div class="furn-material-grid" id="furn-materials-list">
+          <!-- Rendered dynamically -->
+        </div>
+      </div>
+
+      <div class="furniture-actions-row" style="margin-top: 10px;">
+        <button id="btn-focus-livingroom" class="btn btn-gold btn-sm" title="Chiếu camera vào tâm phòng khách xoay 360 độ">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="3"></circle>
+            <path d="M3 7V5a2 2 0 0 1 2-2h2M17 3h2a2 2 0 0 1 2 2v2M21 17v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2"></path>
+          </svg>
+          <span>Xoay 360° Phòng Khách</span>
+        </button>
       </div>
     `;
     this.overlayEl.appendChild(this.furniturePopupEl);
+
+    // 4c. Modal: Thêm Màu Sắc Mới
+    this.addColorModalEl = document.createElement('div');
+    this.addColorModalEl.id = 'modal-add-color';
+    this.addColorModalEl.className = 'auth-modal-backdrop';
+    this.addColorModalEl.style.display = 'none';
+    this.addColorModalEl.style.zIndex = '10001';
+    this.addColorModalEl.innerHTML = `
+      <div class="custom-modal-card glass-panel hud-interactive">
+        <div class="custom-modal-header">
+          <div class="custom-modal-title">
+            <span>🎨</span>
+            <span>Thêm Màu Sắc Mới Cho Đồ Vật</span>
+          </div>
+          <button id="btn-close-add-color-modal" class="modal-close-btn">✕</button>
+        </div>
+        <div class="custom-modal-body">
+          <div class="form-group">
+            <label class="form-label">Tên màu sắc</label>
+            <input type="text" id="inp-new-color-name" class="form-input" placeholder="Ví dụ: Vàng Ánh Kim, Đỏ Burgundy, Nâu Trầm...">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Chọn mã màu</label>
+            <div style="display: flex; gap: 10px; align-items: center;">
+              <input type="color" id="inp-new-color-picker" value="#d4af37" style="width: 48px; height: 40px; border-radius: 8px; border: none; cursor: pointer; background: transparent;">
+              <input type="text" id="inp-new-color-hex" class="form-input" value="#d4af37" style="flex: 1; font-family: monospace; font-weight: 600;">
+            </div>
+          </div>
+          <div class="form-group">
+            <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+              <label class="form-label">Độ bóng / Nhám mờ</label>
+              <span id="lbl-new-color-roughness" style="font-size: 0.75rem; color: #38bdf8;">50%</span>
+            </div>
+            <input type="range" id="inp-new-color-roughness" min="0" max="100" value="50" style="width: 100%;">
+            <div style="display: flex; justify-content: space-between; font-size: 0.7rem; color: #94a3b8; margin-top: 2px;">
+              <span>Bóng gương (0%)</span>
+              <span>Nhám mờ (100%)</span>
+            </div>
+          </div>
+          <div class="form-group">
+            <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+              <label class="form-label">Ánh kim loại (Metalness)</label>
+              <span id="lbl-new-color-metalness" style="font-size: 0.75rem; color: #38bdf8;">0%</span>
+            </div>
+            <input type="range" id="inp-new-color-metalness" min="0" max="100" value="0" style="width: 100%;">
+          </div>
+        </div>
+        <div class="custom-modal-footer">
+          <button id="btn-cancel-add-color" class="btn btn-secondary btn-sm">Hủy</button>
+          <button id="btn-save-new-color" class="btn btn-gold btn-sm">💾 Lưu & Áp Dụng Ngay</button>
+        </div>
+      </div>
+    `;
+    this.overlayEl.appendChild(this.addColorModalEl);
+
+    // 4d. Modal: Tải Lên Vật Liệu / Vân Mới
+    this.addMaterialModalEl = document.createElement('div');
+    this.addMaterialModalEl.id = 'modal-add-material';
+    this.addMaterialModalEl.className = 'auth-modal-backdrop';
+    this.addMaterialModalEl.style.display = 'none';
+    this.addMaterialModalEl.style.zIndex = '10001';
+    this.addMaterialModalEl.innerHTML = `
+      <div class="custom-modal-card glass-panel hud-interactive">
+        <div class="custom-modal-header">
+          <div class="custom-modal-title">
+            <span>✨</span>
+            <span>Tải Lên Vật Liệu / Vân Mới</span>
+          </div>
+          <button id="btn-close-add-material-modal" class="modal-close-btn">✕</button>
+        </div>
+        <div class="custom-modal-body">
+          <div class="form-group">
+            <label class="form-label">Tên vật liệu</label>
+            <input type="text" id="inp-new-material-name" class="form-input" placeholder="Ví dụ: Gạch Men Ý 80x80, Gỗ Walnut Bắc Mỹ...">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Loại bề mặt</label>
+            <select id="sel-new-material-type" class="form-input" style="cursor: pointer;">
+              <option value="wood">Vân Gỗ Tự Nhiên (Wood)</option>
+              <option value="ceramic" selected>Gạch Men / Gốm Sứ (Ceramic Tiles)</option>
+              <option value="marble">Đá Cẩm Thạch (Marble Stone)</option>
+              <option value="fabric">Vải Nỉ / Da Bò (Fabric & Leather)</option>
+              <option value="metal">Kim Loại / Đồng / Thép (Metal)</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Tải ảnh vân bề mặt từ máy tính (.jpg, .png, .webp)</label>
+            <div id="dropzone-material-file" class="file-dropzone">
+              <input type="file" id="inp-new-material-file" accept="image/png, image/jpeg, image/webp" style="display: none;">
+              <div id="dropzone-empty-view">
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="1.8">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                  <polyline points="17 8 12 3 7 8"></polyline>
+                  <line x1="12" y1="3" x2="12" y2="15"></line>
+                </svg>
+                <p style="margin: 8px 0 2px 0; font-size: 0.85rem; font-weight: 600;">Nhấp để chọn file ảnh texture từ máy tính</p>
+                <p style="margin: 0; font-size: 0.72rem; color: #94a3b8;">Khuyến nghị ảnh vuông 1024x1024 hoặc 2048x2048</p>
+              </div>
+              <div id="dropzone-preview-view" style="display: none; align-items: center; gap: 12px;">
+                <img id="img-material-preview" style="width: 56px; height: 56px; object-fit: cover; border-radius: 8px; border: 1px solid rgba(255,255,255,0.2);">
+                <div style="flex: 1; text-align: left;">
+                  <p id="lbl-material-filename" style="margin: 0; font-size: 0.82rem; font-weight: 600; color: #34d399;"></p>
+                  <span style="font-size: 0.72rem; color: #94a3b8;">Nhấp để đổi ảnh khác</span>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="form-group">
+            <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+              <label class="form-label">Tỷ lệ lặp vân (Texture Tiling)</label>
+              <span style="font-size: 0.75rem; color: #38bdf8;">Đẹp nhất cho sàn nhà</span>
+            </div>
+            <select id="sel-new-material-repeat" class="form-input" style="cursor: pointer;">
+              <option value="1">1x (Đồ vật nhỏ: đèn, bình gốm)</option>
+              <option value="2">2x (Bàn trà, kệ tủ)</option>
+              <option value="4" selected>4x (Chuẩn cho Sàn nhà, Bộ Sofa)</option>
+              <option value="8">8x (Sàn rộng / Gạch men khổ nhỏ)</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+              <label class="form-label">Độ bóng / Nhám</label>
+              <span id="lbl-new-material-roughness" style="font-size: 0.75rem; color: #38bdf8;">35%</span>
+            </div>
+            <input type="range" id="inp-new-material-roughness" min="0" max="100" value="35" style="width: 100%;">
+          </div>
+        </div>
+        <div class="custom-modal-footer">
+          <button id="btn-cancel-add-material" class="btn btn-secondary btn-sm">Hủy</button>
+          <button id="btn-save-new-material" class="btn btn-gold btn-sm">🚀 Tải Lên & Áp Dụng</button>
+        </div>
+      </div>
+    `;
+    this.overlayEl.appendChild(this.addMaterialModalEl);
 
     // 5. Bottom Navigation HUD
     const bottomHud = document.createElement('div');
@@ -288,25 +457,35 @@ export class UIController {
     this.walkBarEl = walkBar;
     walkBar.innerHTML = `
       <div class="walk-stages-row">
-        <button class="stage-chip active" data-progress="0.0" title="Cấp 1: Toàn cảnh mặt tiền ngôi nhà trên cao (Video Scroller)">
+        <!-- Video 1: 3 Cấp lăn chuột nhanh bao quát ngoại thất -->
+        <button class="stage-chip active" data-progress="0.0" title="Cấp 1: Toàn cảnh flycam trên cao góc xa">
           <span class="stage-badge">1</span>
-          <span class="stage-label">Ngoại thất</span>
+          <span class="stage-label">Toàn cảnh</span>
         </button>
-        <button class="stage-chip" data-progress="0.30" title="Cấp 2: Bay qua cổng sắt vào sân trước & vườn zen">
+        <button class="stage-chip" data-progress="0.10" title="Cấp 2: Flycam lướt xoay góc phố tiếp cận">
           <span class="stage-badge">2</span>
-          <span class="stage-label">Qua cổng</span>
+          <span class="stage-label">Góc phố</span>
         </button>
-        <button class="stage-chip" data-progress="0.50" title="Cấp 3: Dừng trước bậc tam cấp nhìn qua kính">
+        <button class="stage-chip" data-progress="0.21" title="Cấp 3: Chính diện mặt tiền trên cao (Tiếp nối video 2)">
           <span class="stage-badge">3</span>
-          <span class="stage-label">Trước cửa</span>
+          <span class="stage-label">Mặt tiền</span>
         </button>
         <div class="stage-divider"></div>
-        <button class="stage-chip" data-progress="0.65" title="Cấp 4: Cửa mở & Chuyển giao vào phòng khách 3D (Giây 6.5)">
+        <!-- Video 2 & Nội thất 3D: Đồng bộ tốc độ chuyển động chuẩn -->
+        <button class="stage-chip" data-progress="0.45" title="Cấp 4: Bay qua cổng sắt vào sân trước & vườn zen">
           <span class="stage-badge">4</span>
+          <span class="stage-label">Qua cổng</span>
+        </button>
+        <button class="stage-chip" data-progress="0.60" title="Cấp 5: Dừng trước bậc tam cấp nhìn qua kính">
+          <span class="stage-badge">5</span>
+          <span class="stage-label">Trước cửa</span>
+        </button>
+        <button class="stage-chip" data-progress="0.75" title="Cấp 6: Cửa mở & Chuyển giao vào phòng khách 3D">
+          <span class="stage-badge">6</span>
           <span class="stage-label">Vào phòng <span class="badge-360">360°</span></span>
         </button>
-        <button class="stage-chip" data-progress="1.0" title="Cấp 5: Tâm phòng khách 3D - Khám phá & chọn nội thất">
-          <span class="stage-badge">5</span>
+        <button class="stage-chip" data-progress="1.0" title="Cấp 7: Tâm phòng khách 3D - Khám phá & chọn nội thất">
+          <span class="stage-badge">7</span>
           <span class="stage-label">Nội thất <span class="badge-360">360°</span></span>
         </button>
       </div>
@@ -447,14 +626,17 @@ export class UIController {
         <span>TỰ DO THAO TÁC 3D GLB</span>
       </div>
       <div class="free-glb-controls-hint">
-        <span class="hint-item">🖱️ <b>Chuột trái:</b> Xoay 360°</span>
+        <span class="hint-item">🖱️ <b>Chuột trái:</b> Xoay 360° tại chỗ</span>
         <span class="hint-sep">•</span>
-        <span class="hint-item">🖱️ <b>Chuột phải:</b> Di chuyển (Pan)</span>
+        <span class="hint-item">🖱️ <b>Chuột phải:</b> Trượt ngang (Pan)</span>
         <span class="hint-sep">•</span>
-        <span class="hint-item">⚙️ <b>Cuộn chuột:</b> Thu phóng</span>
+        <span class="hint-item">⚙️ <b>Cuộn chuột:</b> Tiến / Lùi</span>
         <span class="hint-sep">•</span>
         <span class="hint-item">⌨️ <b>W A S D:</b> Đi lại trong phòng</span>
       </div>
+      <button id="btn-recenter-free-glb" class="btn btn-secondary btn-sm" title="Định tâm góc nhìn về giữa phòng khách">
+        <span>🎯 Căn giữa</span>
+      </button>
       <button id="btn-exit-free-glb" class="btn btn-secondary btn-sm" title="Quay lại tham quan toàn cảnh">
         <span>✕ Thoát tự do</span>
       </button>
@@ -481,6 +663,14 @@ export class UIController {
           this.viewer.enterFreeGlbMode();
           this.showToast('🎮 Đã bật chế độ tự do di chuyển & xoay 360° (như file GLB)!');
         }
+      });
+    }
+
+    const btnRecenter = this.freeGlbHudEl.querySelector('#btn-recenter-free-glb');
+    if (btnRecenter) {
+      btnRecenter.addEventListener('click', () => {
+        this.viewer.enterFreeGlbMode();
+        this.showToast('🎯 Đã căn giữa góc nhìn phòng khách');
       });
     }
 
@@ -546,6 +736,192 @@ export class UIController {
       btnFocusLivingRoom.addEventListener('click', () => {
         this.viewer.enterFreeGlbMode();
         this.showToast('✨ Camera đã căn giữa phòng khách, xoay 360° & đi lại tự do!');
+      });
+    }
+
+    // Modal: Thêm Màu Sắc Mới
+    const btnOpenAddColor = this.furniturePopupEl.querySelector('#btn-open-add-color');
+    if (btnOpenAddColor) {
+      btnOpenAddColor.addEventListener('click', () => {
+        this.addColorModalEl.style.display = 'flex';
+      });
+    }
+
+    const btnCloseAddColor = this.addColorModalEl.querySelector('#btn-close-add-color-modal');
+    const btnCancelAddColor = this.addColorModalEl.querySelector('#btn-cancel-add-color');
+    const closeAddColorModal = () => {
+      this.addColorModalEl.style.display = 'none';
+    };
+    if (btnCloseAddColor) btnCloseAddColor.addEventListener('click', closeAddColorModal);
+    if (btnCancelAddColor) btnCancelAddColor.addEventListener('click', closeAddColorModal);
+
+    const inpColorPicker = this.addColorModalEl.querySelector('#inp-new-color-picker') as HTMLInputElement;
+    const inpColorHex = this.addColorModalEl.querySelector('#inp-new-color-hex') as HTMLInputElement;
+    const inpColorRoughness = this.addColorModalEl.querySelector('#inp-new-color-roughness') as HTMLInputElement;
+    const lblColorRoughness = this.addColorModalEl.querySelector('#lbl-new-color-roughness');
+    const inpColorMetalness = this.addColorModalEl.querySelector('#inp-new-color-metalness') as HTMLInputElement;
+    const lblColorMetalness = this.addColorModalEl.querySelector('#lbl-new-color-metalness');
+
+    if (inpColorPicker && inpColorHex) {
+      inpColorPicker.addEventListener('input', () => {
+        inpColorHex.value = inpColorPicker.value;
+      });
+      inpColorHex.addEventListener('input', () => {
+        if (/^#[0-9A-Fa-f]{6}$/.test(inpColorHex.value)) {
+          inpColorPicker.value = inpColorHex.value;
+        }
+      });
+    }
+
+    if (inpColorRoughness && lblColorRoughness) {
+      inpColorRoughness.addEventListener('input', () => {
+        lblColorRoughness.textContent = `${inpColorRoughness.value}%`;
+      });
+    }
+    if (inpColorMetalness && lblColorMetalness) {
+      inpColorMetalness.addEventListener('input', () => {
+        lblColorMetalness.textContent = `${inpColorMetalness.value}%`;
+      });
+    }
+
+    const btnSaveColor = this.addColorModalEl.querySelector('#btn-save-new-color');
+    if (btnSaveColor) {
+      btnSaveColor.addEventListener('click', () => {
+        if (!this.currentInspectedItem) {
+          this.showToast('⚠️ Vui lòng chọn một đồ vật trong phòng trước.');
+          return;
+        }
+        const nameInput = this.addColorModalEl.querySelector('#inp-new-color-name') as HTMLInputElement;
+        const hex = inpColorHex.value || '#d4af37';
+        const roughness = parseFloat(inpColorRoughness.value) / 100;
+        const metalness = parseFloat(inpColorMetalness.value) / 100;
+        const colorName = nameInput.value.trim() || `Màu tùy chỉnh ${hex}`;
+
+        const newColor: CustomColorOption = {
+          id: `custom-color-${Date.now()}`,
+          name: colorName,
+          color: hex,
+          roughness,
+          metalness,
+          isCustom: true,
+        };
+
+        this.customizerStore.addColor(this.currentInspectedItem.itemKey, newColor);
+        this.viewer.furniture.changeInspectedColor(hex, roughness, metalness);
+        this.renderItemColors(this.currentInspectedItem.itemKey);
+        closeAddColorModal();
+        nameInput.value = '';
+        this.showToast(`✨ Đã thêm màu '${colorName}' và áp dụng thành công!`);
+      });
+    }
+
+    // Modal: Tải Lên Vật Liệu / Vân Mới
+    const btnOpenAddMaterial = this.furniturePopupEl.querySelector('#btn-open-add-material');
+    if (btnOpenAddMaterial) {
+      btnOpenAddMaterial.addEventListener('click', () => {
+        this.addMaterialModalEl.style.display = 'flex';
+      });
+    }
+
+    const btnCloseAddMaterial = this.addMaterialModalEl.querySelector('#btn-close-add-material-modal');
+    const btnCancelAddMaterial = this.addMaterialModalEl.querySelector('#btn-cancel-add-material');
+    const dropzone = this.addMaterialModalEl.querySelector('#dropzone-material-file');
+    const inpMaterialFile = this.addMaterialModalEl.querySelector('#inp-new-material-file') as HTMLInputElement;
+    const previewView = this.addMaterialModalEl.querySelector('#dropzone-preview-view') as HTMLElement;
+    const emptyView = this.addMaterialModalEl.querySelector('#dropzone-empty-view') as HTMLElement;
+    const imgPreview = this.addMaterialModalEl.querySelector('#img-material-preview') as HTMLImageElement;
+    const lblFilename = this.addMaterialModalEl.querySelector('#lbl-material-filename') as HTMLElement;
+
+    const closeAddMaterialModal = () => {
+      this.addMaterialModalEl.style.display = 'none';
+      this.selectedMaterialFile = null;
+      if (previewView) previewView.style.display = 'none';
+      if (emptyView) emptyView.style.display = 'flex';
+      if (inpMaterialFile) inpMaterialFile.value = '';
+    };
+    if (btnCloseAddMaterial) btnCloseAddMaterial.addEventListener('click', closeAddMaterialModal);
+    if (btnCancelAddMaterial) btnCancelAddMaterial.addEventListener('click', closeAddMaterialModal);
+
+    if (dropzone && inpMaterialFile) {
+      dropzone.addEventListener('click', () => {
+        inpMaterialFile.click();
+      });
+
+      inpMaterialFile.addEventListener('change', () => {
+        if (inpMaterialFile.files && inpMaterialFile.files.length > 0) {
+          const file = inpMaterialFile.files[0];
+          this.selectedMaterialFile = file;
+          if (lblFilename) lblFilename.textContent = file.name;
+
+          const reader = new FileReader();
+          reader.onload = (e) => {
+            if (imgPreview && e.target) {
+              imgPreview.src = e.target.result as string;
+            }
+            if (emptyView) emptyView.style.display = 'none';
+            if (previewView) previewView.style.display = 'flex';
+          };
+          reader.readAsDataURL(file);
+        }
+      });
+    }
+
+    const inpMatRoughness = this.addMaterialModalEl.querySelector('#inp-new-material-roughness') as HTMLInputElement;
+    const lblMatRoughness = this.addMaterialModalEl.querySelector('#lbl-new-material-roughness');
+    if (inpMatRoughness && lblMatRoughness) {
+      inpMatRoughness.addEventListener('input', () => {
+        lblMatRoughness.textContent = `${inpMatRoughness.value}%`;
+      });
+    }
+
+    const btnSaveMaterial = this.addMaterialModalEl.querySelector('#btn-save-new-material');
+    if (btnSaveMaterial) {
+      btnSaveMaterial.addEventListener('click', async () => {
+        if (!this.currentInspectedItem) {
+          this.showToast('⚠️ Vui lòng chọn một đồ vật trong phòng trước.');
+          return;
+        }
+        const nameInput = this.addMaterialModalEl.querySelector('#inp-new-material-name') as HTMLInputElement;
+        const selType = this.addMaterialModalEl.querySelector('#sel-new-material-type') as HTMLSelectElement;
+        const selRepeat = this.addMaterialModalEl.querySelector('#sel-new-material-repeat') as HTMLSelectElement;
+
+        const matType = (selType?.value || 'ceramic') as 'wood' | 'ceramic' | 'marble' | 'fabric' | 'metal';
+        const repeat = parseInt(selRepeat?.value || '4', 10);
+        const roughness = inpMatRoughness ? parseFloat(inpMatRoughness.value) / 100 : 0.35;
+        const matName = nameInput?.value.trim() || (this.selectedMaterialFile ? this.selectedMaterialFile.name.replace(/\.[^/.]+$/, '') : 'Vật liệu mới');
+
+        let thumbUrl = '';
+        let textureDataUrl = '';
+        if (this.selectedMaterialFile) {
+          textureDataUrl = await TextureLoaderService.getInstance().readImageFile(this.selectedMaterialFile);
+          thumbUrl = textureDataUrl;
+        } else {
+          // Procedural fallback if user doesn't pick file
+          const procType = (['wood', 'ceramic', 'marble', 'fabric'].includes(matType) ? matType : 'ceramic') as 'wood' | 'ceramic' | 'marble' | 'fabric';
+          const proc = TextureLoaderService.getInstance().createProceduralTexture(procType, '#b8a383', repeat, repeat);
+          thumbUrl = proc.thumbUrl;
+        }
+
+        const newMat: CustomMaterialOption = {
+          id: `custom-mat-${Date.now()}`,
+          name: matName,
+          type: matType,
+          thumbUrl: thumbUrl || 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="60" height="60"><rect width="60" height="60" fill="%2394a3b8"/></svg>',
+          textureDataUrl: textureDataUrl || undefined,
+          textureUrl: textureDataUrl || undefined,
+          repeatX: repeat,
+          repeatY: repeat,
+          roughness,
+          metalness: matType === 'metal' ? 0.8 : 0.05,
+          isCustom: true,
+        };
+
+        this.customizerStore.addMaterial(this.currentInspectedItem.itemKey, newMat);
+        await this.viewer.furniture.changeInspectedMaterial(newMat);
+        this.renderItemMaterials(this.currentInspectedItem.itemKey);
+        closeAddMaterialModal();
+        if (nameInput) nameInput.value = '';
+        this.showToast(`✨ Đã tải lên và áp dụng vật liệu '${matName}'!`);
       });
     }
 
@@ -690,11 +1066,13 @@ export class UIController {
       }
 
       let activeIndex = 0;
-      if (progress < 0.18) activeIndex = 0;
-      else if (progress < 0.40) activeIndex = 1;
-      else if (progress < 0.58) activeIndex = 2;
-      else if (progress < 0.85) activeIndex = 3;
-      else activeIndex = 4;
+      if (progress < 0.05) activeIndex = 0;
+      else if (progress < 0.15) activeIndex = 1;
+      else if (progress < 0.33) activeIndex = 2;
+      else if (progress < 0.52) activeIndex = 3;
+      else if (progress < 0.67) activeIndex = 4;
+      else if (progress < 0.87) activeIndex = 5;
+      else activeIndex = 6;
 
       stageChips.forEach((chip, idx) => {
         if (idx === activeIndex) {
@@ -764,15 +1142,111 @@ export class UIController {
     });
 
     // Handle furniture item click in the room
-    this.emitter.on('furniture:item-inspected', (data: { name: string; category?: string; description?: string }) => {
-      this.showToast(`✨ Đang xem: ${data.name}`);
+    this.emitter.on('furniture:item-inspected', (data: any) => {
+      this.currentInspectedItem = data;
+      this.showToast(`✨ Đang chọn: ${data.name}`);
       const titleEl = this.furniturePopupEl.querySelector('#furn-item-name');
       const catEl = this.furniturePopupEl.querySelector('#furn-item-category');
       const descEl = this.furniturePopupEl.querySelector('#furn-item-desc');
       if (titleEl) titleEl.textContent = data.name;
       if (catEl && data.category) catEl.textContent = data.category;
       if (descEl && data.description) descEl.textContent = data.description;
+
+      const itemKey = data.itemKey || 'general';
+      this.renderItemColors(itemKey);
+      this.renderItemMaterials(itemKey);
       this.furniturePopupEl.style.display = 'flex';
+    });
+  }
+
+  private renderItemColors(itemKey: string): void {
+    const container = this.furniturePopupEl.querySelector('#furn-colors-list');
+    if (!container) return;
+    container.innerHTML = '';
+
+    const colors = this.customizerStore.getColorsForItem(itemKey);
+    colors.forEach((col) => {
+      const chip = document.createElement('div');
+      chip.className = 'color-swatch-chip';
+      chip.title = `${col.name} (${col.color})`;
+      chip.innerHTML = `
+        <span class="color-dot" style="background-color: ${col.color};"></span>
+        <span class="color-name">${col.name}</span>
+        ${col.isCustom ? '<span style="font-size: 0.65rem; color: #e2b170;">★</span>' : ''}
+      `;
+
+      if (col.isCustom) {
+        const btnDel = document.createElement('span');
+        btnDel.className = 'chip-del-btn';
+        btnDel.textContent = '✕';
+        btnDel.title = 'Xóa màu tùy chỉnh này';
+        btnDel.style.cssText = 'margin-left: 4px; font-size: 0.7rem; color: #ef4444; cursor: pointer; padding: 0 2px;';
+        btnDel.addEventListener('click', (e) => {
+          e.stopPropagation();
+          this.customizerStore.removeColor(itemKey, col.id);
+          this.renderItemColors(itemKey);
+          this.showToast(`🗑️ Đã xóa màu '${col.name}'`);
+        });
+        chip.appendChild(btnDel);
+      }
+
+      chip.addEventListener('click', () => {
+        container.querySelectorAll('.color-swatch-chip').forEach((c) => c.classList.remove('active'));
+        chip.classList.add('active');
+        this.viewer.furniture.changeInspectedColor(col.color, col.roughness ?? 0.5, col.metalness ?? 0);
+        this.showToast(`🎨 Đã áp dụng màu: ${col.name}`);
+      });
+
+      container.appendChild(chip);
+    });
+  }
+
+  private renderItemMaterials(itemKey: string): void {
+    const container = this.furniturePopupEl.querySelector('#furn-materials-list');
+    if (!container) return;
+    container.innerHTML = '';
+
+    const materials = this.customizerStore.getMaterialsForItem(itemKey);
+    materials.forEach((mat) => {
+      const card = document.createElement('div');
+      card.className = 'material-card-chip';
+      card.title = mat.name;
+      card.style.position = 'relative';
+
+      let thumbContent = '';
+      if (mat.thumbUrl || mat.textureDataUrl || mat.textureUrl) {
+        thumbContent = `<img class="material-thumb" src="${mat.thumbUrl || mat.textureDataUrl || mat.textureUrl}" alt="${mat.name}">`;
+      } else {
+        thumbContent = `<div class="material-thumb" style="background: linear-gradient(135deg, #475569, #1e293b); display: flex; align-items: center; justify-content: center; font-size: 0.8rem;">📦</div>`;
+      }
+
+      card.innerHTML = `
+        ${thumbContent}
+        <span class="material-card-name">${mat.name}</span>
+      `;
+
+      if (mat.isCustom) {
+        const btnDel = document.createElement('span');
+        btnDel.textContent = '✕';
+        btnDel.title = 'Xóa vật liệu tùy chỉnh này';
+        btnDel.style.cssText = 'position: absolute; top: 2px; right: 4px; font-size: 0.72rem; color: #ef4444; background: rgba(0,0,0,0.6); border-radius: 50%; width: 16px; height: 16px; display: flex; align-items: center; justify-content: center; cursor: pointer; z-index: 2;';
+        btnDel.addEventListener('click', (e) => {
+          e.stopPropagation();
+          this.customizerStore.removeMaterial(itemKey, mat.id);
+          this.renderItemMaterials(itemKey);
+          this.showToast(`🗑️ Đã xóa vật liệu '${mat.name}'`);
+        });
+        card.appendChild(btnDel);
+      }
+
+      card.addEventListener('click', async () => {
+        container.querySelectorAll('.material-card-chip').forEach((c) => c.classList.remove('active'));
+        card.classList.add('active');
+        await this.viewer.furniture.changeInspectedMaterial(mat);
+        this.showToast(`✨ Đã áp dụng vật liệu: ${mat.name}`);
+      });
+
+      container.appendChild(card);
     });
   }
 

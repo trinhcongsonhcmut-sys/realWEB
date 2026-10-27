@@ -95,10 +95,16 @@ export class HouseManager {
               }
               if (mesh.material) {
                 if (Array.isArray(mesh.material)) {
-                  mesh.material.forEach((m) => (m.side = THREE.DoubleSide));
+                  mesh.material = mesh.material.map((m) => {
+                    const cloned = m.clone();
+                    cloned.side = THREE.DoubleSide;
+                    return cloned;
+                  });
                 } else {
+                  mesh.material = mesh.material.clone();
                   mesh.material.side = THREE.DoubleSide;
                 }
+                mesh.userData.hasUniqueMaterial = true;
               }
             }
           });

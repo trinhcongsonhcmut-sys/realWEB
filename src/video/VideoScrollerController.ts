@@ -4,8 +4,10 @@ export interface VideoScrollerOptions {
   totalFrames?: number;
   framesDir?: string;
   posterSrc?: string;
-  handoverStartProgress?: number; // e.g. 0.58
-  handoverEndProgress?: number;   // e.g. 0.65
+  video1Frames?: number;          // 120 frames (0..119 from my-housing-first.mp4)
+  video1EndProgress?: number;     // 0.21 (transition to my-housing.mp4)
+  handoverStartProgress?: number; // 0.70
+  handoverEndProgress?: number;   // 0.76
   videoDoorTime?: number;         // e.g. 6.5 seconds in video where door opens & transitions
 }
 
@@ -17,7 +19,9 @@ export class VideoScrollerController {
   public canvasContainer: HTMLElement;
   public emitter: EventEmitter;
 
-  private totalFrames: number = 157; // 157 frames (0 đến 156) tương ứng 6.5s tại 24 FPS
+  private totalFrames: number = 277; // 277 frames (0..119 từ my-housing-first, 120..276 từ my-housing)
+  private video1Frames: number = 120; // 120 frames đầu tiên từ my-housing-first
+  private video1EndProgress: number = 0.21; // Điểm kết thúc video 1, nối tiếp video 2
   private framesDir: string = '/assets/frames';
   private frames: (HTMLImageElement | null)[] = [];
   private currentFrameIndex: number = 0;
@@ -25,8 +29,8 @@ export class VideoScrollerController {
   private isFirstFrameLoaded: boolean = false;
   private isDisposed: boolean = false;
 
-  private handoverStart: number = 0.58;
-  private handoverEnd: number = 0.65;
+  private handoverStart: number = 0.70;
+  private handoverEnd: number = 0.76;
 
   constructor(
     parentContainer: HTMLElement,
@@ -40,6 +44,12 @@ export class VideoScrollerController {
 
     if (options.totalFrames !== undefined) {
       this.totalFrames = options.totalFrames;
+    }
+    if (options.video1Frames !== undefined) {
+      this.video1Frames = options.video1Frames;
+    }
+    if (options.video1EndProgress !== undefined) {
+      this.video1EndProgress = options.video1EndProgress;
     }
     if (options.framesDir !== undefined) {
       this.framesDir = options.framesDir;
@@ -183,11 +193,16 @@ export class VideoScrollerController {
   public handleProgress(progress: number): void {
     const p = Math.max(0.0, Math.min(1.0, progress));
 
-    // 1. Calculate Frame Index from 0 to 156 (Giây 0 đến Giây 6.5)
+    // 1. Calculate Frame Index from 0 to 276 (Video 1: 0..119, Video 2: 120..276)
     let targetFrame = 0;
-    if (p <= this.handoverStart) {
-      const factor = p / this.handoverStart;
-      targetFrame = Math.round(factor * (this.totalFrames - 1));
+    if (p <= this.video1EndProgress) {
+      // Trong Video 1 (my-housing-first.mp4): từ 0 đến 119
+      const factor = p / this.video1EndProgress;
+      targetFrame = Math.round(factor * (this.video1Frames - 1));
+    } else if (p <= this.handoverStart) {
+      // Trong Video 2 (my-housing.mp4): từ 120 đến 276
+      const factor = (p - this.video1EndProgress) / (this.handoverStart - this.video1EndProgress);
+      targetFrame = this.video1Frames + Math.round(factor * (this.totalFrames - 1 - this.video1Frames));
     } else {
       targetFrame = this.totalFrames - 1;
     }

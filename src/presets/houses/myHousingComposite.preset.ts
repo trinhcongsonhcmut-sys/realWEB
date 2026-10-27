@@ -14,8 +14,8 @@ export const MY_HOUSING_COMPOSITE_PRESET: HousePreset = {
     meshName: 'FrontDoor',
     openAxis: 'y',
     openAngle: Math.PI * 0.45,
-    startProgress: 0.52,
-    completeProgress: 0.65
+    startProgress: 0.65,
+    completeProgress: 0.75
   },
   defaultCameraPathId: 'my-housing-walkthrough',
   availableCameraPathIds: ['my-housing-walkthrough', 'townhouse-main-entrance']

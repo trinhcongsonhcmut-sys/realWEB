@@ -6,7 +6,7 @@ export default defineConfig({
     open: false,
     host: true,
     watch: {
-      ignored: ['**/*.glb', '**/*.gltf', '**/*.hdr', '**/*.bin', '**/*.mp4', '**/public/assets/**', '**/public/models/**']
+      ignored: ['**/*.glb', '**/*.gltf', '**/*.hdr', '**/*.bin', '**/*.mp4']
     }
   },
   build: {

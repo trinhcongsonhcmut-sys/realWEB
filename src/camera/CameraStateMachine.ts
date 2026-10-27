@@ -108,9 +108,9 @@ export class CameraStateMachine {
   }
 
   public getStateForProgress(p: number): CameraFSMState {
-    if (p < 0.25) return 'EXTERIOR';
-    if (p < 0.52) return 'APPROACHING_DOOR';
-    if (p < 0.92) return 'ENTERING_HOUSE';
+    if (p < 0.40) return 'EXTERIOR';
+    if (p < 0.70) return 'APPROACHING_DOOR';
+    if (p < 0.94) return 'ENTERING_HOUSE';
     return 'INTERIOR_LOOK_AROUND';
   }
 
@@ -126,9 +126,9 @@ export class CameraStateMachine {
         this.onDoorProgress(doorFactor);
       }
 
-      // Check if camera is inside the living room (threshold >= 0.92)
+      // Check if camera is inside the living room (threshold >= 0.94)
       // Spline smoothly glides camera through the open door to living room center [0, 1.50, -0.6]
-      const interiorThreshold = 0.92;
+      const interiorThreshold = 0.94;
       if (progress >= interiorThreshold) {
         if (this.state !== 'INTERIOR_LOOK_AROUND') {
           // Entering interior 360 mode from outside
@@ -195,6 +195,7 @@ export class CameraStateMachine {
   private onWheel = (e: WheelEvent) => {
     // Only prevent wheel camera scrolling if user is actively scrolling inside a scrollable modal/list
     if (this.isScrollableContent(e.target as HTMLElement)) return;
+    if (this.isInteractionBlocked && this.isInteractionBlocked()) return;
 
     e.preventDefault();
 
@@ -244,6 +245,7 @@ export class CameraStateMachine {
   private onKeyDown = (e: KeyboardEvent) => {
     const active = document.activeElement as HTMLElement;
     if (active && (active.tagName === 'INPUT' || active.tagName === 'TEXTAREA')) return;
+    if (this.isInteractionBlocked && this.isInteractionBlocked()) return;
     if (this.state === 'INTERIOR_LOOK_AROUND' || this.scrollController.currentProgress >= 0.65) {
       if (this.state !== 'INTERIOR_LOOK_AROUND') {
         const sample = this.pathController.getSample(this.scrollController.currentProgress);
@@ -461,8 +463,19 @@ export class CameraStateMachine {
     }
   }
 
+  // 7 Cột mốc điều hướng tương ứng với 3 cấp Video 1 + các cấp Video 2 & Nội thất 3D
+  public static readonly WALK_STAGES: number[] = [
+    0.0,   // Cấp 1: Toàn cảnh góc xa trên cao (Video 1)
+    0.10,  // Cấp 2: Quét xoay góc phố tiếp cận (Video 1)
+    0.21,  // Cấp 3: Chính diện mặt tiền (Kết thúc Video 1 / Nối tiếp Video 2)
+    0.45,  // Cấp 4: Bay qua cổng sắt vào sân tiền sảnh (Video 2)
+    0.60,  // Cấp 5: Dừng trước bậc tam cấp đá kim sa (Video 2)
+    0.75,  // Cấp 6: Cửa mở & bước vào phòng 3D
+    1.0    // Cấp 7: Tâm phòng khách 3D Wabi-Sabi (360°)
+  ];
+
   public setWalkProgress(progress: number): void {
-    if (progress < 0.48 && this.state === 'INTERIOR_LOOK_AROUND') {
+    if (progress < 0.60 && this.state === 'INTERIOR_LOOK_AROUND') {
       this.transitionToExteriorPath(progress);
     } else {
       this.scrollController.setProgress(progress);
@@ -470,14 +483,28 @@ export class CameraStateMachine {
   }
 
   public stepForward(): void {
-    this.scrollController.addDelta(0.25);
+    const stages = CameraStateMachine.WALK_STAGES;
+    const current = this.scrollController.currentProgress;
+    const next = stages.find((s) => s > current + 0.02);
+    if (next !== undefined) {
+      this.setWalkProgress(next);
+    } else {
+      this.setWalkProgress(1.0);
+    }
   }
 
   public stepBackward(): void {
-    if (this.scrollController.currentProgress <= 0.50 && this.state === 'INTERIOR_LOOK_AROUND') {
+    const stages = CameraStateMachine.WALK_STAGES;
+    const current = this.scrollController.currentProgress;
+    if (current <= 0.60 && this.state === 'INTERIOR_LOOK_AROUND') {
       this.returnToPathAndScrollBack();
+      return;
+    }
+    const prev = [...stages].reverse().find((s) => s < current - 0.02);
+    if (prev !== undefined) {
+      this.setWalkProgress(prev);
     } else {
-      this.scrollController.addDelta(-0.25);
+      this.setWalkProgress(0.0);
     }
   }
 

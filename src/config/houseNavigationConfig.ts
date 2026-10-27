@@ -69,9 +69,9 @@ export const DEFAULT_TOWNHOUSE_NAV_CONFIG: HouseNavigationConfig = {
     }
   ],
 
-  // Cửa chính mở tại 0.52 và mở hoàn toàn tại 0.65 để bước vào phòng (khớp giây thứ 6.5)
-  doorOpenStartProgress: 0.52,
-  doorOpenCompleteProgress: 0.65,
+  // Cửa chính mở tại 0.65 và mở hoàn toàn tại 0.75 để bước vào phòng
+  doorOpenStartProgress: 0.65,
+  doorOpenCompleteProgress: 0.75,
 
   scrollSensitivity: 0.00025,
   progressDamping: 5.2,

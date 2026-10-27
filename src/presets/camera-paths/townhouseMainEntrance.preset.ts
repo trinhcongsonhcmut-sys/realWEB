@@ -50,6 +50,6 @@ export const TOWNHOUSE_MAIN_ENTRANCE_PATH: CameraPathPreset = {
     maxPitch: Math.PI * 0.42,
     minPitch: -Math.PI * 0.35,
     lookSensitivity: 0.0035,
-    dampingFactor: 12.0
+    dampingFactor: 22.0
   }
 };

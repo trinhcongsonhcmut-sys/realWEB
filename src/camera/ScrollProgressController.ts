@@ -6,6 +6,10 @@ export class ScrollProgressController {
   public sensitivity: number = 0.00025;
   public damping: number = 5.2;
 
+  // Video 1 boundaries & handover timing
+  public video1EndProgress: number = 0.21;
+  public handoverStartProgress: number = 0.70;
+
   private isEnabled: boolean = true;
   private onProgressChangeCallback?: (progress: number) => void;
 
@@ -20,6 +24,22 @@ export class ScrollProgressController {
 
   public setCallback(cb: (progress: number) => void): void {
     this.onProgressChangeCallback = cb;
+  }
+
+  /**
+   * Tính toán độ nhạy lăn chuột thích ứng (Adaptive Scroll Sensitivity):
+   * 1. Video 1 (my-housing-first): Hoàn tất trọn vẹn video chỉ trong đúng 3 cấp lăn chuột (3 khấc cuộn).
+   *    Camera lướt nhanh hơn nhưng vẫn đảm bảo độ êm mượt tối đa nhờ exponential damping.
+   * 2. Video 2 (my-housing): Tốc độ và cảm giác lăn chuột hoàn toàn đồng bộ và giống hệt như phiên bản cũ.
+   */
+  public getEffectiveSensitivity(currentP: number = this.currentProgress): number {
+    if (currentP < this.video1EndProgress) {
+      // 3 khấc lăn chuột (normalizedDelta = 100) sẽ trải đều qua trọn vẹn video 1: mỗi khấc = 0.07 progress
+      return (this.video1EndProgress / 3) / 100;
+    }
+    // Đoạn video 2: Giữ tốc độ di chuyển trên từng pixel/frame khớp 100% với video cũ
+    const video2Span = this.handoverStartProgress - this.video1EndProgress;
+    return (video2Span / 0.58) * this.sensitivity;
   }
 
   /**
@@ -45,7 +65,8 @@ export class ScrollProgressController {
     // Compress higher speed bursts smoothly
     const normalizedDelta = sign * Math.min(absDelta, 100);
 
-    const progressDelta = normalizedDelta * this.sensitivity;
+    const effSens = this.getEffectiveSensitivity();
+    const progressDelta = normalizedDelta * effSens;
     this.addDelta(progressDelta);
   }
 
@@ -55,7 +76,8 @@ export class ScrollProgressController {
    */
   public handleTouchSwipe(deltaPixelY: number): void {
     if (!this.isEnabled) return;
-    const progressDelta = -deltaPixelY * (this.sensitivity * 2.0);
+    const effSens = this.getEffectiveSensitivity();
+    const progressDelta = -deltaPixelY * (effSens * 2.0);
     this.addDelta(progressDelta);
   }
 
