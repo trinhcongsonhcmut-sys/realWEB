@@ -84,17 +84,20 @@ export class BlockRegistry {
       (schema, emitter) => new TextBlock(schema, emitter),
       {
         type: 'text',
-        name: 'Pop-up Giới Thiệu (Text & CTA)',
-        description: 'Khối giới thiệu thông tin dự án, tiêu đề lớn, đoạn văn, bullet points và nút kêu gọi hành động (CTA)',
+        name: 'Pop-up Văn Bản (Text Box)',
+        description: 'Khung văn bản tùy chỉnh nội dung, hỗ trợ nhập chữ trực tiếp, chỉnh phông chữ, cỡ chữ, kiểu dáng và màu sắc',
         icon: 'type',
         defaultContent: {
-          tagline: 'KIẾN TRÚC THỜI THƯỢNG',
-          headline: 'The Sky Horizon Landmark',
-          description: 'Biểu tượng sống đẳng cấp tọa lạc tại vị trí vàng, kết hợp hài hòa thiên nhiên và công nghệ.',
-          bulletPoints: ['View hồ cảnh quan 360 độ', 'Hệ thống tiện ích thông minh chuẩn quốc tế'],
-          ctaText: 'Đăng Ký Tư Vấn Ngay'
+          text: 'Nhập nội dung văn bản của bạn tại đây...',
+          fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+          fontSize: '18px',
+          fontWeight: '400',
+          fontStyle: 'normal',
+          textAlign: 'left',
+          textColor: '#ffffff',
+          lineHeight: '1.6'
         },
-        defaultLayout: { width: '460px', height: 'auto', position: 'absolute', x: '580px', y: '120px', zIndex: 12 }
+        defaultLayout: { width: '440px', height: 'auto', position: 'absolute', x: '580px', y: '120px', zIndex: 12 }
       }
     );
 

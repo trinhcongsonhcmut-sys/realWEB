@@ -116,7 +116,7 @@ export const DEFAULT_PAGE_SCHEMA: PageSchema = {
           type: 'text',
           order: 2,
           enabled: true,
-          title: 'Thông Tin Dự Án',
+          title: 'Thông Tin Giới Thiệu',
           layout: {
             width: '460px',
             height: 'auto',
@@ -141,16 +141,14 @@ export const DEFAULT_PAGE_SCHEMA: PageSchema = {
           },
           responsive: {},
           content: {
-            tagline: 'KIẾN TRÚC BIỂU TƯỢNG',
-            headline: 'The Sky Horizon Landmark',
-            description: 'Tọa lạc tại tâm điểm phồn hoa, công trình hội tụ các giá trị kiến trúc tinh tế nhất cùng hệ sinh thái tiện ích chuẩn quốc tế.',
-            bulletPoints: [
-              'Tầm nhìn panorama 360 độ ngắm hồ trung tâm',
-              'Vật liệu kính Low-E 3 lớp cách nhiệt tiêu chuẩn Châu Âu',
-              'Sảnh đón 5 sao với tiếp tân & an ninh thông minh 24/7'
-            ],
-            ctaText: 'Đăng Ký Tham Quan Căn Hộ Mẫu',
-            ctaLink: '#contact'
+            text: 'Tọa lạc tại tâm điểm phồn hoa, công trình hội tụ các giá trị kiến trúc tinh tế nhất cùng hệ sinh thái tiện ích chuẩn quốc tế.\n\nKhông gian được thiết kế mở tối đa với tầm nhìn bao trọn hồ cảnh quan trung tâm, mang đến trải nghiệm sống thượng lưu khác biệt.',
+            fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+            fontSize: '16px',
+            fontWeight: '400',
+            fontStyle: 'normal',
+            textAlign: 'left',
+            textColor: '#f1f5f9',
+            lineHeight: '1.7'
           }
         },
         // Pop-up ảnh nhỏ

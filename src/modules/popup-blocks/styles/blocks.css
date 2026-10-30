@@ -27,28 +27,87 @@
 }
 
 /* Feature: Loại bỏ khung nền pop-up (nền trong suốt) */
-.popup-transparent-bg {
+.block-popup.popup-transparent-bg {
   background: transparent !important;
   backdrop-filter: none !important;
   -webkit-backdrop-filter: none !important;
   border: none !important;
+  outline: none !important;
   box-shadow: none !important;
+  border-radius: 0 !important;
+  overflow: hidden !important;
+}
+
+.popup-transparent-bg > .popup-drag-handle {
+  display: none !important;
 }
 
 .popup-transparent-bg > .popup-content-body {
   padding: 0 !important;
+  margin: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  overflow: hidden !important;
+  display: flex !important;
+  flex-direction: column !important;
+  background: transparent !important;
 }
 
+/* Image Block khi trong suốt: hiện nội dung thô như 1 tấm ảnh bình thường */
 .popup-transparent-bg.block-image {
   background: transparent !important;
   border: none !important;
   box-shadow: none !important;
   padding: 0 !important;
+  border-radius: 0 !important;
+  overflow: hidden !important;
 }
 
-.popup-transparent-bg .image-preview-wrapper {
+.popup-transparent-bg.block-image .image-preview-wrapper {
+  position: relative !important;
+  width: 100% !important;
+  height: 100% !important;
+  border-radius: 0 !important;
   background: transparent !important;
-  border-radius: 8px;
+  overflow: hidden !important;
+  display: flex !important;
+  flex: 1 1 100% !important;
+}
+
+.popup-transparent-bg.block-image .popup-img {
+  width: 100% !important;
+  height: 100% !important;
+  max-width: 100% !important;
+  max-height: 100% !important;
+  display: block !important;
+  border-radius: 0 !important;
+  flex: 1 1 auto !important;
+}
+
+.popup-transparent-bg.block-image .popup-caption {
+  display: none !important;
+}
+
+/* Pure Text Block */
+.pure-text-body {
+  padding: 16px;
+  overflow: hidden !important;
+  display: flex !important;
+  flex-direction: column !important;
+  flex: 1 !important;
+}
+
+.popup-transparent-bg .pure-text-body {
+  padding: 0 !important;
+}
+
+.pure-text-content {
+  width: 100%;
+  height: 100%;
+  box-sizing: border-box;
+  overflow: hidden;
+  user-select: text !important;
+  -webkit-user-select: text !important;
 }
 
 .popup-drag-handle {

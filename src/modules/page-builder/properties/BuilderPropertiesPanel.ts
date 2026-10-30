@@ -174,6 +174,94 @@ export class BuilderPropertiesPanel {
         </div>
       </div>
 
+      ${blk.type === 'text' ? `
+      <div class="prop-group">
+        <div class="prop-group-title">Nội Dung & Kiểu Chữ (Typography)</div>
+        <div class="prop-row">
+          <label>Nội dung văn bản</label>
+          <textarea id="prop-text-content" rows="4" class="prop-input" style="resize: vertical; font-family: inherit; line-height: 1.4;">${blk.content.text || ''}</textarea>
+        </div>
+        <div class="prop-row">
+          <label>Phông chữ (Font Family)</label>
+          <select id="prop-font-family" class="prop-select">
+            <option value="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" ${(blk.content.fontFamily || '').includes('Segoe UI') || !blk.content.fontFamily ? 'selected' : ''}>Hệ thống (Sans-Serif)</option>
+            <option value="'Playfair Display', Georgia, serif" ${(blk.content.fontFamily || '').includes('Playfair') ? 'selected' : ''}>Playfair Display (Serif Sang Trọng)</option>
+            <option value="'Inter', sans-serif" ${(blk.content.fontFamily || '').includes('Inter') ? 'selected' : ''}>Inter (Hiện Đại / Chuẩn UI)</option>
+            <option value="'Montserrat', sans-serif" ${(blk.content.fontFamily || '').includes('Montserrat') ? 'selected' : ''}>Montserrat (Hình Học / Sắc Nét)</option>
+            <option value="'Roboto', sans-serif" ${(blk.content.fontFamily || '').includes('Roboto') ? 'selected' : ''}>Roboto (Cân Đối)</option>
+            <option value="'Merriweather', Georgia, serif" ${(blk.content.fontFamily || '').includes('Merriweather') ? 'selected' : ''}>Merriweather (Cổ Điển)</option>
+            <option value="'Oswald', sans-serif" ${(blk.content.fontFamily || '').includes('Oswald') ? 'selected' : ''}>Oswald (Mạnh Mẽ / Khối)</option>
+            <option value="'Courier New', monospace" ${(blk.content.fontFamily || '').includes('Courier') ? 'selected' : ''}>Courier New (Monospace)</option>
+          </select>
+        </div>
+        <div class="prop-row-2">
+          <div>
+            <label>Cỡ chữ (Size)</label>
+            <input type="text" id="prop-font-size" value="${blk.content.fontSize || '16px'}" placeholder="16px, 24px" class="prop-input" />
+          </div>
+          <div>
+            <label>Độ đậm (Weight)</label>
+            <select id="prop-font-weight" class="prop-select">
+              <option value="300" ${blk.content.fontWeight === '300' ? 'selected' : ''}>Mỏng (Light 300)</option>
+              <option value="400" ${!blk.content.fontWeight || blk.content.fontWeight === '400' ? 'selected' : ''}>Bình thường (400)</option>
+              <option value="500" ${blk.content.fontWeight === '500' ? 'selected' : ''}>Trung bình (500)</option>
+              <option value="600" ${blk.content.fontWeight === '600' ? 'selected' : ''}>Hơi đậm (600)</option>
+              <option value="700" ${blk.content.fontWeight === '700' ? 'selected' : ''}>Đậm (Bold 700)</option>
+              <option value="800" ${blk.content.fontWeight === '800' ? 'selected' : ''}>Rất đậm (800)</option>
+            </select>
+          </div>
+        </div>
+        <div class="prop-row-2">
+          <div>
+            <label>Căn lề (Align)</label>
+            <select id="prop-text-align" class="prop-select">
+              <option value="left" ${blk.content.textAlign === 'left' || !blk.content.textAlign ? 'selected' : ''}>Trái</option>
+              <option value="center" ${blk.content.textAlign === 'center' ? 'selected' : ''}>Giữa</option>
+              <option value="right" ${blk.content.textAlign === 'right' ? 'selected' : ''}>Phải</option>
+              <option value="justify" ${blk.content.textAlign === 'justify' ? 'selected' : ''}>Đều 2 bên</option>
+            </select>
+          </div>
+          <div>
+            <label>Khoảng cách dòng</label>
+            <input type="text" id="prop-line-height" value="${blk.content.lineHeight || '1.6'}" placeholder="1.5, 1.8" class="prop-input" />
+          </div>
+        </div>
+        <div class="prop-row-2">
+          <div>
+            <label>Màu chữ</label>
+            <div style="display:flex; gap:6px; align-items:center;">
+              <input type="color" id="prop-text-color-picker" value="${blk.content.textColor && blk.content.textColor.startsWith('#') ? blk.content.textColor : '#ffffff'}" style="width:28px; height:28px; padding:0; border:none; border-radius:4px; cursor:pointer; background:none;" />
+              <input type="text" id="prop-text-color" value="${blk.content.textColor || '#ffffff'}" class="prop-input" style="flex:1;" />
+            </div>
+          </div>
+          <div style="display:flex; flex-direction:column; justify-content:center; gap:6px; padding-top:14px;">
+            <label class="prop-toggle-label" style="font-size:11px;">
+              <input type="checkbox" id="prop-font-italic" ${blk.content.fontStyle === 'italic' ? 'checked' : ''} class="prop-checkbox" />
+              <span>Nghiêng (Italic)</span>
+            </label>
+            <label class="prop-toggle-label" style="font-size:11px;">
+              <input type="checkbox" id="prop-text-uppercase" ${blk.content.textTransform === 'uppercase' ? 'checked' : ''} class="prop-checkbox" />
+              <span>IN HOA</span>
+            </label>
+          </div>
+        </div>
+      </div>
+      ` : ''}
+
+      ${blk.type === 'image' ? `
+      <div class="prop-group">
+        <div class="prop-group-title">Hiển Thị Hình Ảnh</div>
+        <div class="prop-row">
+          <label>Chế độ khớp khung (Object Fit)</label>
+          <select id="prop-object-fit" class="prop-select">
+            <option value="cover" ${blk.content.objectFit === 'cover' || !blk.content.objectFit ? 'selected' : ''}>Cover (Lấp đầy toàn khung)</option>
+            <option value="contain" ${blk.content.objectFit === 'contain' ? 'selected' : ''}>Contain (Vừa vặn - Giữ nguyên hình)</option>
+            <option value="fill" ${blk.content.objectFit === 'fill' ? 'selected' : ''}>Fill (Kéo giãn theo khung)</option>
+          </select>
+        </div>
+      </div>
+      ` : ''}
+
       <div class="prop-group">
         <div class="prop-group-title">Kho Tài Nguyên & Nội Dung</div>
         <button class="btn-open-media-for-block" id="btn-pick-media">
@@ -223,6 +311,11 @@ export class BuilderPropertiesPanel {
       const el = this.element.querySelector(`#${id}`) as HTMLInputElement;
       el?.addEventListener('change', () => {
         setter(el.checked);
+        if (id === 'prop-transparentBackground' && el.checked) {
+          blk.styling.hideHeader = true;
+          const hideHeaderEl = this.element.querySelector('#prop-hideHeader') as HTMLInputElement;
+          if (hideHeaderEl) hideHeaderEl.checked = true;
+        }
         this.state.saveSnapshot();
         this.state.emitter.emit('builder:page-updated', this.state.page);
       });
@@ -230,6 +323,79 @@ export class BuilderPropertiesPanel {
 
     bindCheck('prop-hideHeader', (v) => (blk.styling.hideHeader = v));
     bindCheck('prop-transparentBackground', (v) => (blk.styling.transparentBackground = v));
+
+    // Typography bindings for Text Block
+    if (blk.type === 'text') {
+      const textInput = this.element.querySelector('#prop-text-content') as HTMLTextAreaElement;
+      textInput?.addEventListener('input', () => {
+        blk.content.text = textInput.value;
+        this.state.emitter.emit('builder:text-content-changed', { blockId: blk.id, text: textInput.value, source: 'panel' });
+      });
+      textInput?.addEventListener('change', () => {
+        this.state.saveSnapshot();
+        this.state.emitter.emit('builder:page-updated', this.state.page);
+      });
+
+      bindVal('prop-font-family', (v) => {
+        blk.content.fontFamily = v;
+        this.state.emitter.emit('builder:page-updated', this.state.page);
+      });
+      bindVal('prop-font-size', (v) => {
+        blk.content.fontSize = v;
+        this.state.emitter.emit('builder:page-updated', this.state.page);
+      });
+      bindVal('prop-font-weight', (v) => {
+        blk.content.fontWeight = v;
+        this.state.emitter.emit('builder:page-updated', this.state.page);
+      });
+      bindVal('prop-text-align', (v) => {
+        blk.content.textAlign = v as any;
+        this.state.emitter.emit('builder:page-updated', this.state.page);
+      });
+      bindVal('prop-line-height', (v) => {
+        blk.content.lineHeight = v;
+        this.state.emitter.emit('builder:page-updated', this.state.page);
+      });
+      bindVal('prop-text-color', (v) => {
+        blk.content.textColor = v;
+        const picker = this.element.querySelector('#prop-text-color-picker') as HTMLInputElement;
+        if (picker && v.startsWith('#')) picker.value = v;
+        this.state.emitter.emit('builder:page-updated', this.state.page);
+      });
+
+      const colorPicker = this.element.querySelector('#prop-text-color-picker') as HTMLInputElement;
+      colorPicker?.addEventListener('input', () => {
+        blk.content.textColor = colorPicker.value;
+        const colorInput = this.element.querySelector('#prop-text-color') as HTMLInputElement;
+        if (colorInput) colorInput.value = colorPicker.value;
+        this.state.emitter.emit('builder:page-updated', this.state.page);
+      });
+      colorPicker?.addEventListener('change', () => {
+        this.state.saveSnapshot();
+      });
+
+      const italicEl = this.element.querySelector('#prop-font-italic') as HTMLInputElement;
+      italicEl?.addEventListener('change', () => {
+        blk.content.fontStyle = italicEl.checked ? 'italic' : 'normal';
+        this.state.saveSnapshot();
+        this.state.emitter.emit('builder:page-updated', this.state.page);
+      });
+
+      const upperEl = this.element.querySelector('#prop-text-uppercase') as HTMLInputElement;
+      upperEl?.addEventListener('change', () => {
+        blk.content.textTransform = upperEl.checked ? 'uppercase' : 'none';
+        this.state.saveSnapshot();
+        this.state.emitter.emit('builder:page-updated', this.state.page);
+      });
+    }
+
+    // Image Block bindings
+    if (blk.type === 'image') {
+      bindVal('prop-object-fit', (v) => {
+        blk.content.objectFit = v as any;
+        this.state.emitter.emit('builder:page-updated', this.state.page);
+      });
+    }
 
     // Open media manager to set content URL
     this.element.querySelector('#btn-pick-media')?.addEventListener('click', () => {
@@ -264,6 +430,15 @@ export class BuilderPropertiesPanel {
 
     this.state.emitter.on('builder:block-resizing', updateInputsOnResize);
     this.state.emitter.on('builder:block-updated', updateInputsOnResize);
+
+    this.state.emitter.on('builder:text-content-changed', (data: any) => {
+      if (data.source !== 'panel' && this.state.activeBlockId === data.blockId) {
+        const textInput = this.element.querySelector('#prop-text-content') as HTMLTextAreaElement;
+        if (textInput && textInput.value !== data.text) {
+          textInput.value = data.text;
+        }
+      }
+    });
   }
 }
 

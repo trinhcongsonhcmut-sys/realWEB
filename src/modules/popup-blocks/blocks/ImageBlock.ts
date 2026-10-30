@@ -10,6 +10,7 @@ export interface ImageBlockContent {
   caption?: string;
   badge?: string;
   sizeType?: 'large' | 'medium' | 'small';
+  objectFit?: 'cover' | 'contain' | 'fill';
 }
 
 export class ImageBlock extends BaseBlock<ImageBlockContent> {
@@ -20,15 +21,22 @@ export class ImageBlock extends BaseBlock<ImageBlockContent> {
   public render(): HTMLElement {
     const card = DomUtils.createElement('div', `block-popup block-image size-${this.schema.content.sizeType || 'medium'}`);
     const c = this.schema.content;
+    const objectFit = c.objectFit || 'cover';
 
     card.innerHTML = `
       <div class="popup-drag-handle">
         <span class="popup-title">${this.schema.title || 'Hình Ảnh Kiến Trúc'}</span>
         ${c.badge ? `<span class="popup-badge">${c.badge}</span>` : ''}
       </div>
-      <div class="popup-content-body">
+      <div class="popup-content-body image-content-body">
         <div class="image-preview-wrapper" title="Kéo thả ảnh hoặc click để đổi">
-          <img src="${c.imageUrl}" alt="${c.alt || 'Hình ảnh dự án'}" class="popup-img" loading="lazy" />
+          <img 
+            src="${c.imageUrl}" 
+            alt="${c.alt || 'Hình ảnh dự án'}" 
+            class="popup-img" 
+            style="object-fit: ${objectFit};" 
+            loading="lazy" 
+          />
           <div class="img-overlay-upload">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>

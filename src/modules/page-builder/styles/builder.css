@@ -482,6 +482,21 @@
   box-shadow: 0 0 25px rgba(56, 189, 248, 0.35) !important;
 }
 
+/* Blocks with transparent background in builder */
+.builder-block-editable.popup-transparent-bg:not(.builder-block-selected):not(:hover) {
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+.builder-block-editable.popup-transparent-bg:hover {
+  outline: 1.5px dashed rgba(56, 189, 248, 0.7) !important;
+}
+
+.builder-block-editable.popup-transparent-bg.builder-block-selected {
+  outline: 2px solid #38bdf8 !important;
+  box-shadow: 0 0 20px rgba(56, 189, 248, 0.3) !important;
+}
+
 /* Active Dragging States */
 .is-dragging-block {
   opacity: 0.95 !important;
