@@ -17,8 +17,8 @@ export class ScrollMotionEngine {
   public currentProgress: number = 0.0;
   public targetProgress: number = 0.0;
 
-  // Mode: Discrete Stage Walkthrough (Default) or Continuous
-  public motionMode: MotionMode = 'discrete_stages';
+  // Mode: Continuous Fluid Scrub (Default for RenderAHouse/Apple style) or Discrete Stages
+  public motionMode: MotionMode = 'continuous';
   public stages: StageInfo[] = STAGES_CONFIG;
 
   // Stage state (indices 0..14 corresponding to Cấp 1..15)
@@ -29,18 +29,18 @@ export class ScrollMotionEngine {
   private stageAnimElapsed: number = 0;
   private stageAnimStartProgress: number = 0;
   private stageAnimTargetProgress: number = 0;
-  // Stage animation duration: 1800ms (chậm thêm gấp 3 lần so với trước, tức chậm 6 lần so với ban đầu)
-  private stageAnimDuration: number = 1800; 
+  // Stage animation duration: snappy and responsive (420ms)
+  private stageAnimDuration: number = 420; 
 
-  // Wheel Gesture Normalization: tăng ngưỡng lên 160px để quá trình lăn chậm rãi, đầm chắc
+  // Wheel Gesture Normalization for discrete mode
   private accumulatedDeltaY: number = 0;
   private lastWheelIntentTime: number = 0;
-  private gestureCooldownMs: number = 420; // 420ms cooldown giữa các lần đổi cấp
-  private gestureThreshold: number = 160;  // 160px (chậm gấp 6 lần ban đầu: cần lăn chuột đầm tay mới sang cấp tiếp theo)
+  private gestureCooldownMs: number = 150;
+  private gestureThreshold: number = 70;
 
-  // Continuous physics parameters (chậm 6 lần)
-  public sensitivity: number = 0.00008;
-  public damping: number = 4.2;
+  // Continuous fluid physics parameters (60-120 FPS buttery smooth)
+  public sensitivity: number = 0.00032;
+  public damping: number = 7.5;
   public isEnabled: boolean = true;
 
   // Auto-play state
@@ -74,7 +74,15 @@ export class ScrollMotionEngine {
     this.animate = this.animate.bind(this);
   }
 
+  // Singleton guard to prevent duplicate ghost listeners & competing RAF loops
+  private static activeInstance: ScrollMotionEngine | null = null;
+
   public bind(element: HTMLElement | Window = window): void {
+    if (ScrollMotionEngine.activeInstance && ScrollMotionEngine.activeInstance !== this) {
+      ScrollMotionEngine.activeInstance.unbind();
+    }
+    ScrollMotionEngine.activeInstance = this;
+
     this.unbind();
     this.targetElement = element;
 
@@ -83,6 +91,12 @@ export class ScrollMotionEngine {
     element.addEventListener('touchmove', this.onTouchMove as EventListener, { passive: false });
     element.addEventListener('touchend', this.onTouchEnd as EventListener, { passive: true });
     window.addEventListener('keydown', this.onKeyDown);
+
+    const canvasArea = document.querySelector('.builder-canvas-area') as HTMLElement | null;
+    if (canvasArea && (canvasArea as any) !== element) {
+      canvasArea.addEventListener('wheel', this.onWheel as EventListener, { passive: false });
+      canvasArea.addEventListener('touchmove', this.onTouchMove as EventListener, { passive: false });
+    }
 
     this.startLoop();
   }
@@ -95,7 +109,15 @@ export class ScrollMotionEngine {
       this.targetElement.removeEventListener('touchend', this.onTouchEnd as EventListener);
       this.targetElement = null;
     }
+    const canvasArea = document.querySelector('.builder-canvas-area') as HTMLElement | null;
+    if (canvasArea) {
+      canvasArea.removeEventListener('wheel', this.onWheel as EventListener);
+      canvasArea.removeEventListener('touchmove', this.onTouchMove as EventListener);
+    }
     window.removeEventListener('keydown', this.onKeyDown);
+    if (ScrollMotionEngine.activeInstance === this) {
+      ScrollMotionEngine.activeInstance = null;
+    }
     this.stopLoop();
   }
 
@@ -147,7 +169,7 @@ export class ScrollMotionEngine {
     this.stageAnimElapsed = 0;
 
     const distance = Math.abs(this.activeStageIndex - clamped);
-    this.stageAnimDuration = Math.min(3200, Math.max(1700, 1600 + distance * 250));
+    this.stageAnimDuration = Math.min(750, Math.max(380, 350 + distance * 80));
     this.isAnimatingStage = true;
 
     this.emitter.emit('stage:changed', this.activeStageIndex + 1, this.targetStageIndex + 1, this.stages[clamped]);
@@ -157,10 +179,8 @@ export class ScrollMotionEngine {
    * Step discrete stage forwards (+1) or backwards (-1)
    */
   public stepDiscreteStage(direction: -1 | 1): void {
-    const nextStage = Math.max(0, Math.min(this.stages.length - 1, this.targetStageIndex + direction));
-    if (nextStage !== this.targetStageIndex || this.isAnimatingStage) {
-      this.goToStage(nextStage, true);
-    }
+    const nextStage = Math.max(0, Math.min(this.stages.length - 1, this.activeStageIndex + direction));
+    this.goToStage(nextStage, true);
   }
 
   /**
@@ -182,17 +202,18 @@ export class ScrollMotionEngine {
     const canvasArea = document.querySelector('.builder-canvas-area') as HTMLElement | null;
     const currentScrollTop = canvasArea ? canvasArea.scrollTop : (window.scrollY || document.documentElement.scrollTop || 0);
 
-    const isAtLastStage = this.targetStageIndex >= this.stages.length - 1 || this.currentProgress >= 0.98;
-    const isAtFirstStage = this.targetStageIndex <= 0 && this.currentProgress <= 0.02;
+    // CRITICAL FIX: Handover MUST check visual progress reaching 100% (>= 98.5%)
+    const isVideoFullyComplete = this.currentProgress >= 0.985 && !this.isAnimatingStage;
+    const isVideoAtStart = this.currentProgress <= 0.015 && !this.isAnimatingStage;
 
-    // A. If already scrolled down past the hero video (scrollTop > 50):
-    if (currentScrollTop > 50) {
+    // A. If already scrolled down past the hero video into lower sections (scrollTop > 100):
+    if (currentScrollTop > 100) {
       // Allow natural page scrolling through popup cards and lower sections
       return;
     }
 
-    // B. At the END of video (Cấp 15 / 100%) and scrolling DOWN:
-    if (isAtLastStage && rawDelta > 0) {
+    // B. At the END of video (>= 98.5% visual progress) and scrolling DOWN:
+    if (isVideoFullyComplete && rawDelta > 0) {
       this.accumulatedDeltaY = 0;
       this.isAnimatingStage = false;
       this.emitter.emit('scroll:completed');
@@ -207,8 +228,8 @@ export class ScrollMotionEngine {
       return; // Do NOT preventDefault! Let page scroll down naturally
     }
 
-    // C. At the START of video (Cấp 1 / 0%) and scrolling UP:
-    if (isAtFirstStage && rawDelta < 0) {
+    // C. At the START of video (<= 1.5% visual progress) and scrolling UP:
+    if (isVideoAtStart && rawDelta < 0) {
       this.accumulatedDeltaY = 0;
       this.isAnimatingStage = false;
       this.emitter.emit('motion:video-rewound');
@@ -224,32 +245,32 @@ export class ScrollMotionEngine {
       return; // Do NOT preventDefault! Let page scroll up naturally
     }
 
-    // D. Scrubbing within video stages: prevent normal page scroll
+    // D. Scrubbing within video: PREVENT normal page scroll to keep user in Section 1!
     e.preventDefault();
 
-    // DISCRETE STAGES MODE
-    if (this.motionMode === 'discrete_stages') {
-      const now = performance.now();
-      const timeSinceLast = now - this.lastWheelIntentTime;
-
-      this.accumulatedDeltaY += rawDelta;
-
-      if (Math.abs(this.accumulatedDeltaY) >= this.gestureThreshold) {
-        const dir = Math.sign(this.accumulatedDeltaY) as -1 | 1;
-        this.accumulatedDeltaY = 0;
-
-        if (timeSinceLast >= this.gestureCooldownMs || this.isAnimatingStage) {
-          this.lastWheelIntentTime = now;
-          this.stepDiscreteStage(dir);
-        }
-      }
+    // CONTINUOUS FLUID SCROLL MODE (Default - Silky Smooth 60-120 FPS)
+    if (this.motionMode === 'continuous') {
+      const sign = Math.sign(rawDelta);
+      const clampedDelta = sign * Math.min(Math.abs(rawDelta), 120);
+      this.addProgress(clampedDelta * this.sensitivity);
       return;
     }
 
-    // CONTINUOUS FREE SCROLL MODE
-    const sign = Math.sign(rawDelta);
-    const clampedDelta = sign * Math.min(Math.abs(rawDelta), 100);
-    this.addProgress(clampedDelta * this.sensitivity);
+    // DISCRETE STAGES MODE
+    const now = performance.now();
+    const timeSinceLast = now - this.lastWheelIntentTime;
+
+    this.accumulatedDeltaY += rawDelta;
+
+    if (Math.abs(this.accumulatedDeltaY) >= this.gestureThreshold) {
+      const dir = Math.sign(this.accumulatedDeltaY) as -1 | 1;
+      this.accumulatedDeltaY = 0;
+
+      if (timeSinceLast >= this.gestureCooldownMs || !this.isAnimatingStage) {
+        this.lastWheelIntentTime = now;
+        this.stepDiscreteStage(dir);
+      }
+    }
   }
 
   private onTouchStart(e: TouchEvent): void {
@@ -265,10 +286,10 @@ export class ScrollMotionEngine {
     const currentY = e.touches[0].clientY;
     const deltaY = this.lastTouchY - currentY;
 
-    const isAtLastStage = this.targetStageIndex >= this.stages.length - 1 || this.currentProgress >= 0.98;
-    const isAtFirstStage = this.targetStageIndex <= 0 && this.currentProgress <= 0.02;
+    const isVideoFullyComplete = this.currentProgress >= 0.985 && !this.isAnimatingStage;
+    const isVideoAtStart = this.currentProgress <= 0.015 && !this.isAnimatingStage;
 
-    if (isAtLastStage && deltaY > 0) {
+    if (isVideoFullyComplete && deltaY > 0) {
       this.emitter.emit('scroll:completed');
       this.emitter.emit('motion:video-completed');
       const allSections = document.querySelectorAll('.page-section');
@@ -278,24 +299,24 @@ export class ScrollMotionEngine {
       return;
     }
 
-    if (isAtFirstStage && deltaY < 0) {
+    if (isVideoAtStart && deltaY < 0) {
       this.emitter.emit('motion:video-rewound');
       return;
     }
 
     if (e.cancelable) e.preventDefault();
 
-    if (this.motionMode === 'discrete_stages') {
-      if (Math.abs(deltaY) > 24) {
-        const dir = deltaY > 0 ? 1 : -1;
-        this.stepDiscreteStage(dir as -1 | 1);
-        this.lastTouchY = currentY;
-      }
+    if (this.motionMode === 'continuous') {
+      this.addProgress(deltaY * (this.sensitivity * 2.0));
+      this.lastTouchY = currentY;
       return;
     }
 
-    this.addProgress(deltaY * (this.sensitivity * 2.0));
-    this.lastTouchY = currentY;
+    if (Math.abs(deltaY) > 24) {
+      const dir = deltaY > 0 ? 1 : -1;
+      this.stepDiscreteStage(dir as -1 | 1);
+      this.lastTouchY = currentY;
+    }
   }
 
   private onTouchEnd(): void {
@@ -464,6 +485,8 @@ export class ScrollMotionEngine {
 
       this.activeStageIndex = this.findNearestStageIndex(this.currentProgress);
       this.emitter.emit('scroll:progress', this.currentProgress);
+      this.emitter.emit('stage:changed', this.activeStageIndex + 1, this.activeStageIndex + 1, this.stages[this.activeStageIndex]);
+      this.emitter.emit('motion:stage-change', this.activeStageIndex + 1);
     }
 
     this.rafId = requestAnimationFrame(this.animate);

@@ -11,6 +11,7 @@ export class BuilderCanvas {
   public viewportFrame: HTMLElement;
   public pageContainer: HTMLElement;
   public scrollEngine?: ScrollingPageEngine;
+  private activeBlockInstances: any[] = [];
 
   constructor(state: BuilderState) {
     this.state = state;
@@ -26,6 +27,14 @@ export class BuilderCanvas {
   }
 
   public renderPage(): void {
+    // 0. Dispose previous block instances to prevent duplicate wheel/animation listeners
+    this.activeBlockInstances.forEach((inst) => {
+      try {
+        inst.dispose();
+      } catch (err) {}
+    });
+    this.activeBlockInstances = [];
+
     if (this.scrollEngine) {
       this.scrollEngine.dispose();
     }
@@ -109,6 +118,7 @@ export class BuilderCanvas {
 
         try {
           const blockInstance = registry.create(blkSchema, this.state.emitter);
+          this.activeBlockInstances.push(blockInstance);
           const blockEl = blockInstance.element;
 
           // In edit mode: enable drag, drop, and selection
