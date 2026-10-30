@@ -13,9 +13,11 @@
     "test:report": "node --experimental-strip-types scripts/test_telegram_reporting.ts"
   },
   "dependencies": {
+    "three": "^0.174.0",
     "lucide": "^0.475.0"
   },
   "devDependencies": {
+    "@types/three": "^0.174.0",
     "typescript": "^5.7.3",
     "vite": "^6.2.0"
   }
