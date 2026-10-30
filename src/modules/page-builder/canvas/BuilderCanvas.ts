@@ -235,6 +235,27 @@ export class BuilderCanvas {
       this.viewportFrame.className = `builder-viewport-frame frame-${device}`;
     });
 
+    this.state.emitter.on('builder:text-style-changed', (data: any) => {
+      if (!data?.blockId || !data?.styles) return;
+      const textEls = this.pageContainer.querySelectorAll<HTMLElement>(
+        `.pure-text-content[data-block-id="${data.blockId}"], [data-block-id="${data.blockId}"] .pure-text-content`
+      );
+      textEls.forEach((el) => {
+        if (data.styles.fontFamily !== undefined) el.style.fontFamily = data.styles.fontFamily;
+        if (data.styles.fontSize !== undefined) {
+          const raw = String(data.styles.fontSize).trim();
+          el.style.fontSize = /^\d+(\.\d+)?$/.test(raw) ? `${raw}px` : raw;
+        }
+        if (data.styles.fontWeight !== undefined) el.style.fontWeight = data.styles.fontWeight;
+        if (data.styles.fontStyle !== undefined) el.style.fontStyle = data.styles.fontStyle;
+        if (data.styles.textAlign !== undefined) el.style.textAlign = data.styles.textAlign;
+        if (data.styles.textColor !== undefined) el.style.color = data.styles.textColor;
+        if (data.styles.lineHeight !== undefined) el.style.lineHeight = data.styles.lineHeight;
+        if (data.styles.letterSpacing !== undefined) el.style.letterSpacing = data.styles.letterSpacing;
+        if (data.styles.textTransform !== undefined) el.style.textTransform = data.styles.textTransform;
+      });
+    });
+
     this.state.emitter.on('builder:selection-changed', () => {
       // Highlight selected block
       this.pageContainer.querySelectorAll('.builder-block-editable').forEach((el) => {

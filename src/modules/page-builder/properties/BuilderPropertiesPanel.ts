@@ -192,7 +192,7 @@ export class BuilderPropertiesPanel {
         <div class="prop-row">
           <label>Phông chữ (Font Family)</label>
           <select id="prop-font-family" class="prop-select">
-            <option value="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" ${(blk.content.fontFamily || '').includes('Segoe UI') || !blk.content.fontFamily ? 'selected' : ''}>Hệ thống (Sans-Serif)</option>
+            <option value="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" ${(blk.content.fontFamily || '').includes('Segoe UI') || !blk.content.fontFamily ? 'selected' : ''}>Hệ thống (Sans-Serif Hiện Đại)</option>
             <option value="'Playfair Display', Georgia, serif" ${(blk.content.fontFamily || '').includes('Playfair') ? 'selected' : ''}>Playfair Display (Serif Sang Trọng)</option>
             <option value="'Inter', sans-serif" ${(blk.content.fontFamily || '').includes('Inter') ? 'selected' : ''}>Inter (Hiện Đại / Chuẩn UI)</option>
             <option value="'Montserrat', sans-serif" ${(blk.content.fontFamily || '').includes('Montserrat') ? 'selected' : ''}>Montserrat (Hình Học / Sắc Nét)</option>
@@ -202,6 +202,7 @@ export class BuilderPropertiesPanel {
             <option value="'Courier New', monospace" ${(blk.content.fontFamily || '').includes('Courier') ? 'selected' : ''}>Courier New (Monospace)</option>
           </select>
         </div>
+
         <div class="prop-row-2">
           <div>
             <label>Cỡ chữ (Size: e.g. 18px, 24px)</label>
@@ -216,9 +217,24 @@ export class BuilderPropertiesPanel {
               <option value="600" ${blk.content.fontWeight === '600' ? 'selected' : ''}>Hơi đậm (600)</option>
               <option value="700" ${blk.content.fontWeight === '700' ? 'selected' : ''}>Đậm (Bold 700)</option>
               <option value="800" ${blk.content.fontWeight === '800' ? 'selected' : ''}>Rất đậm (800)</option>
+              <option value="900" ${blk.content.fontWeight === '900' ? 'selected' : ''}>Siêu đậm (900)</option>
             </select>
           </div>
         </div>
+
+        <div class="prop-row" style="margin-top:-2px;">
+          <input type="range" id="prop-font-size-slider" min="12" max="72" value="${parseInt(blk.content.fontSize || '16', 10) || 16}" class="text-font-size-slider" title="Kéo để đổi cỡ chữ tức thì" />
+          <div class="quick-size-pills">
+            <span style="font-size:10px; color:#94a3b8; align-self:center; margin-right:2px;">Nhanh:</span>
+            <button class="btn-size-pill" data-size="14px">14px</button>
+            <button class="btn-size-pill" data-size="18px">18px</button>
+            <button class="btn-size-pill" data-size="24px">24px</button>
+            <button class="btn-size-pill" data-size="32px">32px</button>
+            <button class="btn-size-pill" data-size="44px">44px</button>
+            <button class="btn-size-pill" data-size="60px">60px</button>
+          </div>
+        </div>
+
         <div class="prop-row-2">
           <div>
             <label>Căn lề (Align)</label>
@@ -234,24 +250,35 @@ export class BuilderPropertiesPanel {
             <input type="text" id="prop-line-height" value="${blk.content.lineHeight || '1.6'}" placeholder="1.5, 1.8" class="prop-input" />
           </div>
         </div>
-        <div class="prop-row-2">
-          <div>
-            <label>Màu chữ (Bảng màu full)</label>
-            <div style="display:flex; gap:6px; align-items:center;">
-              <input type="color" id="prop-text-color-picker" value="${this.extractHex(blk.content.textColor)}" style="width:32px; height:32px; padding:0; border:none; border-radius:4px; cursor:pointer; background:none;" />
-              <input type="text" id="prop-text-color" value="${blk.content.textColor || '#ffffff'}" class="prop-input" style="flex:1;" />
-            </div>
+
+        <div class="prop-row">
+          <label>Màu chữ (Bảng màu full)</label>
+          <div style="display:flex; gap:6px; align-items:center;">
+            <input type="color" id="prop-text-color-picker" value="${this.extractHex(blk.content.textColor)}" style="width:34px; height:34px; padding:0; border:none; border-radius:6px; cursor:pointer; background:none; flex-shrink:0;" title="Bấm chọn màu cầu vồng" />
+            <input type="text" id="prop-text-color" value="${blk.content.textColor || '#ffffff'}" placeholder="#ffffff" class="prop-input" style="flex:1;" />
           </div>
-          <div style="display:flex; flex-direction:column; justify-content:center; gap:6px; padding-top:14px;">
-            <label class="prop-toggle-label" style="font-size:11px;">
-              <input type="checkbox" id="prop-font-italic" ${blk.content.fontStyle === 'italic' ? 'checked' : ''} class="prop-checkbox" />
-              <span>Nghiêng (Italic)</span>
-            </label>
-            <label class="prop-toggle-label" style="font-size:11px;">
-              <input type="checkbox" id="prop-text-uppercase" ${blk.content.textTransform === 'uppercase' ? 'checked' : ''} class="prop-checkbox" />
-              <span>IN HOA</span>
-            </label>
+          <div class="text-color-presets-row">
+            <span style="font-size:10px; color:#94a3b8; margin-right:2px;">Gợi ý:</span>
+            <button class="btn-text-color-dot" data-color="#ffffff" style="background:#ffffff;" title="Trắng"></button>
+            <button class="btn-text-color-dot" data-color="#f1f5f9" style="background:#f1f5f9;" title="Trắng sáng"></button>
+            <button class="btn-text-color-dot" data-color="#38bdf8" style="background:#38bdf8;" title="Xanh Cyan"></button>
+            <button class="btn-text-color-dot" data-color="#f59e0b" style="background:#f59e0b;" title="Vàng Gold"></button>
+            <button class="btn-text-color-dot" data-color="#ef4444" style="background:#ef4444;" title="Đỏ"></button>
+            <button class="btn-text-color-dot" data-color="#10b981" style="background:#10b981;" title="Xanh Emerald"></button>
+            <button class="btn-text-color-dot" data-color="#a855f7" style="background:#a855f7;" title="Tím"></button>
+            <button class="btn-text-color-dot" data-color="#94a3b8" style="background:#94a3b8;" title="Xám Slate"></button>
           </div>
+        </div>
+
+        <div class="prop-row-2" style="margin-top:6px;">
+          <label class="prop-toggle-label" style="font-size:12px;">
+            <input type="checkbox" id="prop-font-italic" ${blk.content.fontStyle === 'italic' ? 'checked' : ''} class="prop-checkbox" />
+            <span>Nghiêng (Italic)</span>
+          </label>
+          <label class="prop-toggle-label" style="font-size:12px;">
+            <input type="checkbox" id="prop-text-uppercase" ${blk.content.textTransform === 'uppercase' ? 'checked' : ''} class="prop-checkbox" />
+            <span>IN HOA</span>
+          </label>
         </div>
       </div>
       ` : ''}
@@ -534,11 +561,6 @@ export class BuilderPropertiesPanel {
 
     // Direct Typography live bindings for Text Block
     if (blk.type === 'text') {
-      const getTargetTextEl = () => {
-        const blockEl = document.querySelector(`[data-block-id="${blk.id}"]`);
-        return blockEl?.querySelector('.pure-text-content') as HTMLElement | null;
-      };
-
       const normalizeFontSize = (v: string): string => {
         const trimmed = (v || '').trim();
         if (!trimmed) return '16px';
@@ -546,14 +568,40 @@ export class BuilderPropertiesPanel {
         return trimmed;
       };
 
+      const parsePxNumber = (v: string): number => {
+        const num = parseInt(v, 10);
+        return isNaN(num) ? 16 : num;
+      };
+
+      // Comprehensive style application that updates DOM immediately, fires event bus, and updates schema
+      const applyLiveStyle = (propName: string, cssProp: string, val: string) => {
+        (blk.content as any)[propName] = val;
+
+        // 1. Direct query across all possible DOM locations on canvas
+        const elements = document.querySelectorAll<HTMLElement>(
+          `.builder-canvas-area .pure-text-content[data-block-id="${blk.id}"], .builder-canvas-area [data-block-id="${blk.id}"] .pure-text-content, [data-block-id="${blk.id}"] .pure-text-content, .pure-text-content[data-block-id="${blk.id}"]`
+        );
+        elements.forEach((el) => {
+          (el.style as any)[cssProp] = val;
+        });
+
+        // 2. Broadcast to TextBlock instance listener
+        this.state.emitter.emit('builder:text-style-changed', {
+          blockId: blk.id,
+          styles: { [propName]: val }
+        });
+      };
+
       // 1. Text Content
       const textInput = this.element.querySelector('#prop-text-content') as HTMLTextAreaElement;
       textInput?.addEventListener('input', () => {
         blk.content.text = textInput.value;
-        const textEl = getTargetTextEl();
-        if (textEl && textEl.innerText !== textInput.value) {
-          textEl.innerText = textInput.value;
-        }
+        const elements = document.querySelectorAll<HTMLElement>(
+          `.builder-canvas-area .pure-text-content[data-block-id="${blk.id}"], .builder-canvas-area [data-block-id="${blk.id}"] .pure-text-content, [data-block-id="${blk.id}"] .pure-text-content`
+        );
+        elements.forEach((el) => {
+          if (el.innerText !== textInput.value) el.innerText = textInput.value;
+        });
         this.state.emitter.emit('builder:text-content-changed', { blockId: blk.id, text: textInput.value, source: 'panel' });
       });
       textInput?.addEventListener('change', () => {
@@ -563,93 +611,108 @@ export class BuilderPropertiesPanel {
       // 2. Font Family
       const fontFamEl = this.element.querySelector('#prop-font-family') as HTMLSelectElement;
       fontFamEl?.addEventListener('change', () => {
-        blk.content.fontFamily = fontFamEl.value;
-        const textEl = getTargetTextEl();
-        if (textEl) textEl.style.fontFamily = fontFamEl.value;
+        applyLiveStyle('fontFamily', 'fontFamily', fontFamEl.value);
         this.state.saveSnapshot();
       });
 
-      // 3. Font Size (Input & Live Typing with auto-px)
-      const fontSizeEl = this.element.querySelector('#prop-font-size') as HTMLInputElement;
-      fontSizeEl?.addEventListener('input', () => {
-        const normalized = normalizeFontSize(fontSizeEl.value);
-        blk.content.fontSize = normalized;
-        const textEl = getTargetTextEl();
-        if (textEl) textEl.style.fontSize = normalized;
+      // 3. Font Size Controls (Input Text, Range Slider & Quick Pills)
+      const fontSizeInput = this.element.querySelector('#prop-font-size') as HTMLInputElement;
+      const fontSizeSlider = this.element.querySelector('#prop-font-size-slider') as HTMLInputElement;
+
+      const setFontSize = (sizeStr: string, saveSnap = true) => {
+        const normalized = normalizeFontSize(sizeStr);
+        if (fontSizeInput && fontSizeInput.value !== normalized) fontSizeInput.value = normalized;
+        if (fontSizeSlider) fontSizeSlider.value = String(parsePxNumber(normalized));
+        applyLiveStyle('fontSize', 'fontSize', normalized);
+        if (saveSnap) this.state.saveSnapshot();
+      };
+
+      fontSizeInput?.addEventListener('input', () => {
+        setFontSize(fontSizeInput.value, false);
       });
-      fontSizeEl?.addEventListener('change', () => {
-        const normalized = normalizeFontSize(fontSizeEl.value);
-        fontSizeEl.value = normalized;
-        blk.content.fontSize = normalized;
-        const textEl = getTargetTextEl();
-        if (textEl) textEl.style.fontSize = normalized;
-        this.state.saveSnapshot();
+      fontSizeInput?.addEventListener('change', () => {
+        setFontSize(fontSizeInput.value, true);
+      });
+
+      fontSizeSlider?.addEventListener('input', () => {
+        setFontSize(`${fontSizeSlider.value}px`, false);
+      });
+      fontSizeSlider?.addEventListener('change', () => {
+        setFontSize(`${fontSizeSlider.value}px`, true);
+      });
+
+      this.element.querySelectorAll('.btn-size-pill').forEach((btn) => {
+        btn.addEventListener('click', (e) => {
+          e.preventDefault();
+          const sz = (e.currentTarget as HTMLElement).dataset.size || '16px';
+          setFontSize(sz, true);
+        });
       });
 
       // 4. Font Weight
       const fontWeightEl = this.element.querySelector('#prop-font-weight') as HTMLSelectElement;
       fontWeightEl?.addEventListener('change', () => {
-        blk.content.fontWeight = fontWeightEl.value;
-        const textEl = getTargetTextEl();
-        if (textEl) textEl.style.fontWeight = fontWeightEl.value;
+        applyLiveStyle('fontWeight', 'fontWeight', fontWeightEl.value);
         this.state.saveSnapshot();
       });
 
       // 5. Text Align
       const textAlignEl = this.element.querySelector('#prop-text-align') as HTMLSelectElement;
       textAlignEl?.addEventListener('change', () => {
-        blk.content.textAlign = textAlignEl.value as any;
-        const textEl = getTargetTextEl();
-        if (textEl) textEl.style.textAlign = textAlignEl.value;
+        applyLiveStyle('textAlign', 'textAlign', textAlignEl.value);
         this.state.saveSnapshot();
       });
 
       // 6. Line Height
       const lineHgtEl = this.element.querySelector('#prop-line-height') as HTMLInputElement;
       lineHgtEl?.addEventListener('input', () => {
-        blk.content.lineHeight = lineHgtEl.value;
-        const textEl = getTargetTextEl();
-        if (textEl) textEl.style.lineHeight = lineHgtEl.value;
+        applyLiveStyle('lineHeight', 'lineHeight', lineHgtEl.value);
       });
       lineHgtEl?.addEventListener('change', () => {
         this.state.saveSnapshot();
       });
 
-      // 7. Text Color (Rainbow Native Picker + Text Input)
+      // 7. Text Color (Color Picker, Text Input & Color Dots)
       const colorPicker = this.element.querySelector('#prop-text-color-picker') as HTMLInputElement;
       const colorInput = this.element.querySelector('#prop-text-color') as HTMLInputElement;
 
+      const setTextColor = (colorVal: string, saveSnap = true) => {
+        if (colorInput && colorInput.value !== colorVal) colorInput.value = colorVal;
+        const hex = this.extractHex(colorVal);
+        if (colorPicker && hex.startsWith('#') && (hex.length === 7 || hex.length === 4)) {
+          colorPicker.value = hex;
+        }
+        applyLiveStyle('textColor', 'color', colorVal);
+        if (saveSnap) this.state.saveSnapshot();
+      };
+
       colorPicker?.addEventListener('input', () => {
-        const newCol = colorPicker.value;
-        blk.content.textColor = newCol;
-        if (colorInput) colorInput.value = newCol;
-        const textEl = getTargetTextEl();
-        if (textEl) textEl.style.color = newCol;
+        setTextColor(colorPicker.value, false);
       });
       colorPicker?.addEventListener('change', () => {
-        this.state.saveSnapshot();
+        setTextColor(colorPicker.value, true);
       });
 
       colorInput?.addEventListener('input', () => {
-        const newCol = colorInput.value;
-        blk.content.textColor = newCol;
-        if (colorPicker && newCol.startsWith('#') && (newCol.length === 7 || newCol.length === 4)) {
-          colorPicker.value = newCol;
-        }
-        const textEl = getTargetTextEl();
-        if (textEl) textEl.style.color = newCol;
+        setTextColor(colorInput.value, false);
       });
       colorInput?.addEventListener('change', () => {
-        this.state.saveSnapshot();
+        setTextColor(colorInput.value, true);
+      });
+
+      this.element.querySelectorAll('.btn-text-color-dot').forEach((btn) => {
+        btn.addEventListener('click', (e) => {
+          e.preventDefault();
+          const dotColor = (e.currentTarget as HTMLElement).dataset.color || '#ffffff';
+          setTextColor(dotColor, true);
+        });
       });
 
       // 8. Italic Style
       const italicEl = this.element.querySelector('#prop-font-italic') as HTMLInputElement;
       italicEl?.addEventListener('change', () => {
         const styleVal = italicEl.checked ? 'italic' : 'normal';
-        blk.content.fontStyle = styleVal;
-        const textEl = getTargetTextEl();
-        if (textEl) textEl.style.fontStyle = styleVal;
+        applyLiveStyle('fontStyle', 'fontStyle', styleVal);
         this.state.saveSnapshot();
       });
 
@@ -657,9 +720,7 @@ export class BuilderPropertiesPanel {
       const upperEl = this.element.querySelector('#prop-text-uppercase') as HTMLInputElement;
       upperEl?.addEventListener('change', () => {
         const transformVal = upperEl.checked ? 'uppercase' : 'none';
-        blk.content.textTransform = transformVal;
-        const textEl = getTargetTextEl();
-        if (textEl) textEl.style.textTransform = transformVal;
+        applyLiveStyle('textTransform', 'textTransform', transformVal);
         this.state.saveSnapshot();
       });
     }

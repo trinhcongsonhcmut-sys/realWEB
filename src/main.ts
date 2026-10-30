@@ -33,6 +33,18 @@ document.addEventListener('DOMContentLoaded', () => {
   if (!currentPage) {
     currentPage = DEFAULT_PAGE_SCHEMA;
     PageStorageService.saveDraft(DEFAULT_PAGE_SCHEMA);
+  } else {
+    // Ensure backwards compatibility for text blocks loaded from previous sessions
+    currentPage.sections?.forEach((sec) => {
+      sec.blocks?.forEach((blk) => {
+        if (blk.type === 'text' && blk.content) {
+          if (!blk.content.fontSize) blk.content.fontSize = '16px';
+          if (!blk.content.fontWeight) blk.content.fontWeight = '400';
+          if (!blk.content.textColor) blk.content.textColor = '#ffffff';
+          if (!blk.content.fontFamily) blk.content.fontFamily = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+        }
+      });
+    });
   }
 
   // 3. Initialize Page Builder Application

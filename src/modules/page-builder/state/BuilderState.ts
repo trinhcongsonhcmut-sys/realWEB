@@ -26,6 +26,7 @@ export class BuilderState {
     this.undoStack.push(JSON.stringify(this.page));
     if (this.undoStack.length > 20) this.undoStack.shift();
     this.redoStack = [];
+    PageStorageService.saveDraft(this.page);
   }
 
   public undo(): boolean {

@@ -69,6 +69,7 @@ export class TextBlock extends BaseBlock<TextBlockContent> {
       <div class="popup-content-body pure-text-body">
         <div 
           class="pure-text-content" 
+          data-block-id="${this.schema.id}"
           contenteditable="true"
           spellcheck="false"
           style="
@@ -107,6 +108,24 @@ export class TextBlock extends BaseBlock<TextBlockContent> {
       textEl.addEventListener('blur', () => {
         c.text = textEl.innerText;
         this.emitter.emit('builder:block-updated', this.schema);
+      });
+
+      // Real-time style changes from builder properties panel
+      this.emitter.on('builder:text-style-changed', (data: any) => {
+        if (data && data.blockId === this.schema.id && textEl) {
+          if (data.styles?.fontFamily !== undefined) textEl.style.fontFamily = data.styles.fontFamily;
+          if (data.styles?.fontSize !== undefined) {
+            const raw = String(data.styles.fontSize).trim();
+            textEl.style.fontSize = /^\d+(\.\d+)?$/.test(raw) ? `${raw}px` : raw;
+          }
+          if (data.styles?.fontWeight !== undefined) textEl.style.fontWeight = data.styles.fontWeight;
+          if (data.styles?.fontStyle !== undefined) textEl.style.fontStyle = data.styles.fontStyle;
+          if (data.styles?.textAlign !== undefined) textEl.style.textAlign = data.styles.textAlign;
+          if (data.styles?.textColor !== undefined) textEl.style.color = data.styles.textColor;
+          if (data.styles?.lineHeight !== undefined) textEl.style.lineHeight = data.styles.lineHeight;
+          if (data.styles?.letterSpacing !== undefined) textEl.style.letterSpacing = data.styles.letterSpacing;
+          if (data.styles?.textTransform !== undefined) textEl.style.textTransform = data.styles.textTransform;
+        }
       });
     }
 

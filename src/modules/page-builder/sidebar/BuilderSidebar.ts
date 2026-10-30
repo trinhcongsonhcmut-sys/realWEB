@@ -87,7 +87,7 @@ export class BuilderSidebar {
           'div',
           `tree-block-item ${this.state.activeBlockId === blk.id ? 'active' : ''} ${!blk.enabled ? 'block-disabled' : ''}`
         );
-        blkItem.dataset.blockId = blk.id;
+        blkItem.dataset.sidebarBlockId = blk.id;
 
         blkItem.innerHTML = `
           <div class="blk-meta">
