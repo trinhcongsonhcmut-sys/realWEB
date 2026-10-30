@@ -37,7 +37,8 @@ export class DomUtils {
     element: HTMLElement,
     handle: HTMLElement,
     onMove?: (x: number, y: number) => void,
-    onEnd?: (x: number, y: number) => void
+    onEnd?: (x: number, y: number) => void,
+    options?: { snap?: number }
   ): () => void {
     let isDragging = false;
     let startX = 0;
@@ -46,8 +47,8 @@ export class DomUtils {
     let initialTop = 0;
 
     const onPointerDown = (e: PointerEvent) => {
-      // Don't drag if clicking buttons, inputs, links, or resize handles
-      if ((e.target as HTMLElement).closest('button, input, textarea, select, a, .btn-del-asset, .no-drag, .resize-handle')) {
+      // Don't drag if clicking buttons, inputs, links, rotation handle or resize handles
+      if ((e.target as HTMLElement).closest('button, input, textarea, select, a, .btn-del-asset, .no-drag, .resize-handle, .rotate-handle')) {
         return;
       }
 
@@ -68,7 +69,6 @@ export class DomUtils {
       element.style.top = `${Math.round(initialTop)}px`;
       element.style.right = 'auto';
       element.style.bottom = 'auto';
-      element.style.transform = 'none';
 
       element.classList.add('is-dragging-block');
       document.body.style.userSelect = 'none';
@@ -85,8 +85,13 @@ export class DomUtils {
 
       const dx = e.clientX - startX;
       const dy = e.clientY - startY;
-      const newX = Math.round(initialLeft + dx);
-      const newY = Math.round(initialTop + dy);
+      let newX = Math.round(initialLeft + dx);
+      let newY = Math.round(initialTop + dy);
+
+      if (options?.snap && options.snap > 1) {
+        newX = Math.round(newX / options.snap) * options.snap;
+        newY = Math.round(newY / options.snap) * options.snap;
+      }
 
       element.style.left = `${newX}px`;
       element.style.top = `${newY}px`;
@@ -109,8 +114,13 @@ export class DomUtils {
       const parentEl = (element.offsetParent as HTMLElement) || element.parentElement || document.body;
       const rect = element.getBoundingClientRect();
       const parentRect = parentEl.getBoundingClientRect();
-      const finalX = Math.round(rect.left - parentRect.left + parentEl.scrollLeft);
-      const finalY = Math.round(rect.top - parentRect.top + parentEl.scrollTop);
+      let finalX = Math.round(rect.left - parentRect.left + parentEl.scrollLeft);
+      let finalY = Math.round(rect.top - parentRect.top + parentEl.scrollTop);
+
+      if (options?.snap && options.snap > 1) {
+        finalX = Math.round(finalX / options.snap) * options.snap;
+        finalY = Math.round(finalY / options.snap) * options.snap;
+      }
 
       if (onEnd) {
         onEnd(finalX, finalY);
@@ -130,10 +140,102 @@ export class DomUtils {
     };
   }
 
+  public static makeRotatable(
+    element: HTMLElement,
+    handle: HTMLElement,
+    onRotate?: (deg: number) => void,
+    onEnd?: (deg: number) => void
+  ): () => void {
+    let isRotating = false;
+    let curDeg = 0;
+    let badge: HTMLElement | null = null;
+
+    const onPointerDown = (e: PointerEvent) => {
+      e.stopPropagation();
+      e.preventDefault();
+      isRotating = true;
+
+      const match = (element.style.transform || '').match(/rotate\(([-0-9.]+)deg\)/);
+      curDeg = match ? parseFloat(match[1]) : 0;
+
+      element.classList.add('is-rotating-block');
+      document.body.style.userSelect = 'none';
+
+      badge = DomUtils.createElement('div', 'rotation-angle-badge');
+      badge.textContent = `${Math.round(curDeg)}°`;
+      element.appendChild(badge);
+
+      try {
+        handle.setPointerCapture(e.pointerId);
+      } catch {}
+    };
+
+    const onPointerMove = (e: PointerEvent) => {
+      if (!isRotating) return;
+
+      const rect = element.getBoundingClientRect();
+      const centerX = rect.left + rect.width / 2;
+      const centerY = rect.top + rect.height / 2;
+
+      const rad = Math.atan2(e.clientY - centerY, e.clientX - centerX);
+      let deg = Math.round(rad * (180 / Math.PI)) + 90;
+      if (deg > 180) deg -= 360;
+      if (deg < -180) deg += 360;
+
+      if (e.shiftKey) {
+        deg = Math.round(deg / 15) * 15;
+      }
+
+      curDeg = deg;
+
+      const transform = element.style.transform || '';
+      const withoutRotate = transform.replace(/rotate\([^)]+\)/g, '').trim();
+      element.style.transform = `${withoutRotate} rotate(${curDeg}deg)`.trim();
+
+      if (badge) {
+        badge.textContent = `${Math.round(curDeg)}°`;
+      }
+
+      if (onRotate) {
+        onRotate(curDeg);
+      }
+    };
+
+    const onPointerUp = (e: PointerEvent) => {
+      if (!isRotating) return;
+      isRotating = false;
+      element.classList.remove('is-rotating-block');
+      document.body.style.userSelect = '';
+      badge?.remove();
+      badge = null;
+
+      try {
+        handle.releasePointerCapture(e.pointerId);
+      } catch {}
+
+      if (onEnd) {
+        onEnd(curDeg);
+      }
+    };
+
+    handle.addEventListener('pointerdown', onPointerDown);
+    window.addEventListener('pointermove', onPointerMove);
+    window.addEventListener('pointerup', onPointerUp);
+    window.addEventListener('pointercancel', onPointerUp);
+
+    return () => {
+      handle.removeEventListener('pointerdown', onPointerDown);
+      window.removeEventListener('pointermove', onPointerMove);
+      window.removeEventListener('pointerup', onPointerUp);
+      window.removeEventListener('pointercancel', onPointerUp);
+    };
+  }
+
   public static makeResizable(
     element: HTMLElement,
     onResize?: (w: number, h: number, x: number, y: number) => void,
-    onEnd?: (w: number, h: number, x: number, y: number) => void
+    onEnd?: (w: number, h: number, x: number, y: number) => void,
+    options?: { snap?: number }
   ): () => void {
     const directions = ['nw', 'n', 'ne', 'e', 'se', 's', 'sw', 'w'];
     const handleElements: HTMLElement[] = [];
@@ -185,7 +287,6 @@ export class DomUtils {
       element.style.height = `${Math.round(initialHeight)}px`;
       element.style.right = 'auto';
       element.style.bottom = 'auto';
-      element.style.transform = 'none';
 
       element.classList.add('is-resizing-block');
       document.body.style.userSelect = 'none';
@@ -225,6 +326,13 @@ export class DomUtils {
       } else if (currentDir.includes('n')) {
         newH = Math.max(60, Math.round(initialHeight - dy));
         newT = Math.round(initialTop + (initialHeight - newH));
+      }
+
+      if (options?.snap && options.snap > 1) {
+        newW = Math.round(newW / options.snap) * options.snap;
+        newH = Math.round(newH / options.snap) * options.snap;
+        newL = Math.round(newL / options.snap) * options.snap;
+        newT = Math.round(newT / options.snap) * options.snap;
       }
 
       curW = newW;

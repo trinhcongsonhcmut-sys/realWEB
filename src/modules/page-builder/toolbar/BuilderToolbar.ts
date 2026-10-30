@@ -25,6 +25,11 @@ export class BuilderToolbar {
           <span class="toolbar-title">RealWeb Builder</span>
         </div>
 
+        <div style="display:flex; gap:4px; margin-left:6px;">
+          <button class="tb-btn" id="btn-tb-undo" title="Hoàn tác thao tác trước (Ctrl+Z)">↩ Hoàn tác</button>
+          <button class="tb-btn" id="btn-tb-redo" title="Làm lại thao tác vừa hủy (Ctrl+Y)">↪ Làm lại</button>
+        </div>
+
         <div class="toolbar-mode-switch">
           <button class="mode-btn ${!this.state.isEditMode ? 'active' : ''}" id="btn-mode-preview">
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -65,6 +70,18 @@ export class BuilderToolbar {
             </svg>
           </button>
         </div>
+
+        <div class="tb-canvas-controls">
+          <button class="tb-icon-tool ${this.state.showGrid ? 'active' : ''}" id="btn-toggle-grid" title="Bật/Tắt Lưới căn chỉnh (Grid)"># Lưới</button>
+          <button class="tb-icon-tool ${this.state.snapToGrid ? 'active' : ''}" id="btn-toggle-snap" title="Bật/Tắt Bắt dính lưới (Snap)">🧲 Bắt dính</button>
+          <select class="tb-zoom-select" id="tb-zoom-select" title="Tỷ lệ phóng to/thu nhỏ Canvas">
+            <option value="0.5">50%</option>
+            <option value="0.75">75%</option>
+            <option value="1.0" selected>100%</option>
+            <option value="1.25">125%</option>
+            <option value="1.5">150%</option>
+          </select>
+        </div>
       </div>
 
       <div class="toolbar-right">
@@ -87,6 +104,50 @@ export class BuilderToolbar {
   }
 
   private bindEvents(): void {
+    // Undo & Redo
+    this.element.querySelector('#btn-tb-undo')?.addEventListener('click', () => {
+      this.state.undo();
+    });
+
+    this.element.querySelector('#btn-tb-redo')?.addEventListener('click', () => {
+      this.state.redo();
+    });
+
+    window.addEventListener('keydown', (e) => {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z') {
+        if (e.shiftKey) {
+          e.preventDefault();
+          this.state.redo();
+        } else {
+          e.preventDefault();
+          this.state.undo();
+        }
+      } else if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'y') {
+        e.preventDefault();
+        this.state.redo();
+      }
+    });
+
+    // Grid & Snap toggles
+    const btnGrid = this.element.querySelector('#btn-toggle-grid') as HTMLElement;
+    btnGrid?.addEventListener('click', () => {
+      const active = this.state.toggleGrid();
+      btnGrid.classList.toggle('active', active);
+    });
+
+    const btnSnap = this.element.querySelector('#btn-toggle-snap') as HTMLElement;
+    btnSnap?.addEventListener('click', () => {
+      const active = this.state.toggleSnap();
+      btnSnap.classList.toggle('active', active);
+    });
+
+    // Zoom
+    const zoomSelect = this.element.querySelector('#tb-zoom-select') as HTMLSelectElement;
+    zoomSelect?.addEventListener('change', () => {
+      const z = parseFloat(zoomSelect.value);
+      this.state.setZoom(z);
+    });
+
     // Mode toggle
     const btnPreview = this.element.querySelector('#btn-mode-preview');
     const btnEdit = this.element.querySelector('#btn-mode-edit');

@@ -63,11 +63,12 @@ export class SectionContainer {
     if (cfg.zIndex !== undefined) blockElement.style.zIndex = String(cfg.zIndex);
 
     // X/Y coordinates if absolute or fixed
+    const transformParts: string[] = [];
     if (cfg.position === 'absolute' || cfg.position === 'fixed') {
       if (cfg.x) {
         if (cfg.x === 'center') {
           blockElement.style.left = '50%';
-          blockElement.style.transform = 'translateX(-50%)';
+          transformParts.push('translateX(-50%)');
         } else if (cfg.x === 'left') {
           blockElement.style.left = '40px';
         } else if (cfg.x === 'right') {
@@ -81,11 +82,7 @@ export class SectionContainer {
       if (cfg.y) {
         if (cfg.y === 'center') {
           blockElement.style.top = '50%';
-          if (cfg.x === 'center') {
-            blockElement.style.transform = 'translate(-50%, -50%)';
-          } else {
-            blockElement.style.transform = 'translateY(-50%)';
-          }
+          transformParts.push('translateY(-50%)');
         } else if (cfg.y === 'top') {
           blockElement.style.top = '40px';
         } else if (cfg.y === 'bottom') {
@@ -97,16 +94,59 @@ export class SectionContainer {
       }
     }
 
+    // Transforms: Rotate & Scale
+    if (blockSchema.transform?.rotate) {
+      transformParts.push(`rotate(${blockSchema.transform.rotate}deg)`);
+    }
+    if (blockSchema.transform?.scale !== undefined && blockSchema.transform.scale !== 1) {
+      transformParts.push(`scale(${blockSchema.transform.scale})`);
+    }
+    if (transformParts.length > 0) {
+      blockElement.style.transform = transformParts.join(' ');
+    }
+
     // Styling
     const st = blockSchema.styling;
     if (st.background) blockElement.style.background = st.background;
     if (st.backdropBlur) blockElement.style.backdropFilter = `blur(${st.backdropBlur})`;
-    if (st.borderRadius) blockElement.style.borderRadius = st.borderRadius;
+
+    // Border Radius: Individual corners or unified
+    if (st.borderRadiusIndividual) {
+      const bi = st.borderRadiusIndividual;
+      if (bi.topLeft) blockElement.style.borderTopLeftRadius = bi.topLeft;
+      if (bi.topRight) blockElement.style.borderTopRightRadius = bi.topRight;
+      if (bi.bottomRight) blockElement.style.borderBottomRightRadius = bi.bottomRight;
+      if (bi.bottomLeft) blockElement.style.borderBottomLeftRadius = bi.bottomLeft;
+    } else if (st.borderRadius) {
+      blockElement.style.borderRadius = st.borderRadius;
+    }
+
     if (st.border) blockElement.style.border = st.border;
-    if (st.shadow) blockElement.style.boxShadow = st.shadow;
+
+    // Shadow Presets or Custom Shadow
+    if (st.shadowPreset && st.shadowPreset !== 'custom') {
+      const presetShadows: Record<string, string> = {
+        'none': 'none',
+        'editorial': '0 20px 40px -15px rgba(0,0,0,0.5), 0 0 20px rgba(0,0,0,0.15)',
+        'soft-ambient': '0 30px 60px rgba(0,0,0,0.35), 0 12px 24px rgba(0,0,0,0.2)',
+        'deep-floating': '0 35px 80px rgba(0,0,0,0.7), 0 15px 35px rgba(0,0,0,0.45)',
+        'dramatic': '0 50px 100px -20px rgba(0,0,0,0.85), 0 30px 60px -30px rgba(0,0,0,0.9)',
+        'glow-cyan': '0 20px 50px rgba(56, 189, 248, 0.25), 0 0 25px rgba(56, 189, 248, 0.15)'
+      };
+      blockElement.style.boxShadow = presetShadows[st.shadowPreset] || 'none';
+    } else if (st.shadow) {
+      blockElement.style.boxShadow = st.shadow;
+    }
+
     if (st.opacity !== undefined) blockElement.style.opacity = String(st.opacity);
     if (st.padding) blockElement.style.padding = st.padding;
     if (st.margin) blockElement.style.margin = st.margin;
+    if (st.overflow) blockElement.style.overflow = st.overflow;
+
+    // Multi-speed Parallax speed data attribute
+    if (blockSchema.animation?.parallaxSpeed !== undefined) {
+      blockElement.dataset.parallaxSpeed = String(blockSchema.animation.parallaxSpeed);
+    }
 
     if (st.hideHeader) {
       blockElement.classList.add('popup-no-header');

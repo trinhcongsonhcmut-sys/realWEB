@@ -10,6 +10,8 @@ export * from './blocks/Model3DBlock';
 export * from './blocks/MapBlock';
 export * from './blocks/SpecificationsBlock';
 export * from './blocks/ComparisonBlock';
+export * from './blocks/InformationCardBlock';
+export * from './blocks/CustomContainerBlock';
 
 import { BlockRegistry } from './registry/BlockRegistry';
 

@@ -144,52 +144,118 @@ export class BuilderCanvas {
               this.state.selectBlock(blkSchema.id, secSchema.id);
             });
 
-            // 1. MAKE DRAGGABLE
-            const handle = (!blkSchema.styling?.hideHeader && blockEl.querySelector('.popup-drag-handle'))
-              ? (blockEl.querySelector('.popup-drag-handle') as HTMLElement)
-              : blockEl;
+            if (blkSchema.locked) {
+              blockEl.classList.add('block-locked');
+              const lockBadge = DomUtils.createElement('div', 'block-lock-badge');
+              lockBadge.innerHTML = '🔒 Đã khóa';
+              blockEl.appendChild(lockBadge);
+            } else {
+              // 1. MAKE DRAGGABLE
+              const handle = (!blkSchema.styling?.hideHeader && blockEl.querySelector('.popup-drag-handle'))
+                ? (blockEl.querySelector('.popup-drag-handle') as HTMLElement)
+                : blockEl;
 
-            DomUtils.makeDraggable(
-              blockEl,
-              handle,
-              (curX, curY) => {
-                let badge = blockEl.querySelector('.drag-coords-badge') as HTMLElement;
-                if (!badge) {
-                  badge = DomUtils.createElement('div', 'drag-coords-badge');
-                  blockEl.appendChild(badge);
+              DomUtils.makeDraggable(
+                blockEl,
+                handle,
+                (curX, curY) => {
+                  let badge = blockEl.querySelector('.drag-coords-badge') as HTMLElement;
+                  if (!badge) {
+                    badge = DomUtils.createElement('div', 'drag-coords-badge');
+                    blockEl.appendChild(badge);
+                  }
+                  badge.textContent = `X: ${curX}px, Y: ${curY}px`;
+                },
+                (finalX, finalY) => {
+                  blockEl.querySelector('.drag-coords-badge')?.remove();
+                  blkSchema.layout.position = 'absolute';
+                  blkSchema.layout.x = `${finalX}px`;
+                  blkSchema.layout.y = `${finalY}px`;
+                  this.state.saveSnapshot();
+                  this.state.emitter.emit('builder:block-updated', blkSchema);
+                },
+                { snap: this.state.snapToGrid ? this.state.gridSize : 0 }
+              );
+
+              // 1.5. MAKE RESIZABLE
+              DomUtils.makeResizable(
+                blockEl,
+                (w, h, x, y) => {
+                  blkSchema.layout.width = `${w}px`;
+                  blkSchema.layout.height = `${h}px`;
+                  blkSchema.layout.x = `${x}px`;
+                  blkSchema.layout.y = `${y}px`;
+                  this.state.emitter.emit('builder:block-resizing', blkSchema);
+                },
+                (finalW, finalH, finalX, finalY) => {
+                  blkSchema.layout.position = 'absolute';
+                  blkSchema.layout.width = `${finalW}px`;
+                  blkSchema.layout.height = `${finalH}px`;
+                  blkSchema.layout.x = `${finalX}px`;
+                  blkSchema.layout.y = `${finalY}px`;
+                  this.state.saveSnapshot();
+                  this.state.emitter.emit('builder:block-updated', blkSchema);
+                },
+                { snap: this.state.snapToGrid ? this.state.gridSize : 0 }
+              );
+
+              // 1.8. ROTATION HANDLE
+              const rotateStem = DomUtils.createElement('div', 'rotate-stem');
+              const rotateHandle = DomUtils.createElement('div', 'rotate-handle');
+              rotateHandle.title = 'Kéo để xoay góc (Giữ Shift để snap 15°)';
+              rotateStem.appendChild(rotateHandle);
+              blockEl.appendChild(rotateStem);
+
+              DomUtils.makeRotatable(
+                blockEl,
+                rotateHandle,
+                (deg) => {
+                  if (!blkSchema.transform) blkSchema.transform = {};
+                  blkSchema.transform.rotate = deg;
+                  this.state.emitter.emit('builder:block-rotating', { blockId: blkSchema.id, deg });
+                },
+                (finalDeg) => {
+                  if (!blkSchema.transform) blkSchema.transform = {};
+                  blkSchema.transform.rotate = finalDeg;
+                  this.state.saveSnapshot();
+                  this.state.emitter.emit('builder:block-updated', blkSchema);
                 }
-                badge.textContent = `X: ${curX}px, Y: ${curY}px`;
-              },
-              (finalX, finalY) => {
-                blockEl.querySelector('.drag-coords-badge')?.remove();
-                blkSchema.layout.position = 'absolute';
-                blkSchema.layout.x = `${finalX}px`;
-                blkSchema.layout.y = `${finalY}px`;
-                this.state.saveSnapshot();
-                this.state.emitter.emit('builder:block-updated', blkSchema);
-              }
-            );
+              );
+            }
 
-            // 1.5. MAKE RESIZABLE
-            DomUtils.makeResizable(
-              blockEl,
-              (w, h, x, y) => {
-                blkSchema.layout.width = `${w}px`;
-                blkSchema.layout.height = `${h}px`;
-                blkSchema.layout.x = `${x}px`;
-                blkSchema.layout.y = `${y}px`;
-                this.state.emitter.emit('builder:block-resizing', blkSchema);
-              },
-              (finalW, finalH, finalX, finalY) => {
-                blkSchema.layout.position = 'absolute';
-                blkSchema.layout.width = `${finalW}px`;
-                blkSchema.layout.height = `${finalH}px`;
-                blkSchema.layout.x = `${finalX}px`;
-                blkSchema.layout.y = `${finalY}px`;
-                this.state.saveSnapshot();
-                this.state.emitter.emit('builder:block-updated', blkSchema);
-              }
-            );
+            // QUICK FLOATING LAYER ACTIONS BAR
+            const quickBar = DomUtils.createElement('div', 'block-quick-floating-bar');
+            quickBar.innerHTML = `
+              <button type="button" class="btn-qf-act" data-act="front" title="Lên trên cùng (Bring to Front)">⏫ Lên đầu</button>
+              <button type="button" class="btn-qf-act" data-act="forward" title="Lên 1 lớp (Move Forward)">▲ Lên</button>
+              <button type="button" class="btn-qf-act" data-act="backward" title="Xuống 1 lớp (Move Backward)">▼ Xuống</button>
+              <button type="button" class="btn-qf-act" data-act="back" title="Xuống đáy (Send to Back)">⏬ Đáy</button>
+              <span class="qf-divider"></span>
+              <button type="button" class="btn-qf-act" data-act="clone" title="Nhân bản (Duplicate)">⎘ Nhân bản</button>
+              <button type="button" class="btn-qf-act" data-act="lock" title="${blkSchema.locked ? 'Mở khóa' : 'Khóa'}">${blkSchema.locked ? '🔓 Mở' : '🔒 Khóa'}</button>
+              <button type="button" class="btn-qf-act btn-qf-del" data-act="delete" title="Xóa phần tử">&times;</button>
+            `;
+
+            quickBar.querySelectorAll('.btn-qf-act').forEach((btn) => {
+              btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                e.preventDefault();
+                const act = (btn as HTMLElement).dataset.act;
+                if (act === 'front') this.state.bringToFront(blkSchema.id);
+                else if (act === 'back') this.state.sendToBack(blkSchema.id);
+                else if (act === 'forward') this.state.moveForward(blkSchema.id);
+                else if (act === 'backward') this.state.moveBackward(blkSchema.id);
+                else if (act === 'clone') this.state.cloneBlock(blkSchema.id);
+                else if (act === 'lock') this.state.lockBlock(blkSchema.id);
+                else if (act === 'delete') {
+                  if (confirm(`Xóa phần tử "${blkSchema.title}"?`)) {
+                    this.state.deleteBlock(blkSchema.id);
+                  }
+                }
+              });
+            });
+
+            blockEl.appendChild(quickBar);
 
             // 2. FILE DRAG & DROP DIRECTLY ONTO POP-UP
             blockEl.addEventListener('dragover', (e) => {
@@ -307,6 +373,23 @@ export class BuilderCanvas {
           secEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
         }
       }
+    });
+
+    this.state.emitter.on('builder:zoom-changed', (zoom: number) => {
+      this.viewportFrame.style.transform = `scale(${zoom})`;
+      this.viewportFrame.style.transformOrigin = 'top center';
+    });
+
+    this.state.emitter.on('builder:grid-toggled', (show: boolean) => {
+      if (show) {
+        this.element.classList.add('canvas-grid-active');
+      } else {
+        this.element.classList.remove('canvas-grid-active');
+      }
+    });
+
+    this.state.emitter.on('builder:snap-toggled', () => {
+      this.renderPage();
     });
   }
 

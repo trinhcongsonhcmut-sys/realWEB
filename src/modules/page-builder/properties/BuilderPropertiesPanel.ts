@@ -138,14 +138,48 @@ export class BuilderPropertiesPanel {
             <input type="text" id="prop-y" value="${l.y || 'center'}" placeholder="top, center, 100px" class="prop-input" />
           </div>
         </div>
+      </div>
+
+      <div class="prop-group">
+        <div class="prop-group-title">Xoay Góc & Tỷ Lệ (Transform)</div>
         <div class="prop-row">
-          <label>Z-Index (Lớp xếp chồng)</label>
-          <input type="number" id="prop-zIndex" value="${l.zIndex ?? 10}" class="prop-input" />
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+            <label style="margin:0;">Góc xoay (Rotate: -180° đến 180°)</label>
+            <span id="label-val-rotate" style="font-size:11px; font-weight:700; color:#38bdf8;">${blk.transform?.rotate || 0}°</span>
+          </div>
+          <input type="range" id="prop-rotate-slider" min="-180" max="180" value="${blk.transform?.rotate || 0}" class="text-font-size-slider" />
+        </div>
+        <div class="prop-row">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+            <label style="margin:0;">Tỷ lệ phóng (Scale)</label>
+            <span id="label-val-scale" style="font-size:11px; font-weight:700; color:#38bdf8;">${blk.transform?.scale || 1.0}x</span>
+          </div>
+          <input type="range" id="prop-scale-slider" min="0.5" max="2.0" step="0.05" value="${blk.transform?.scale || 1.0}" class="text-font-size-slider" />
         </div>
       </div>
 
       <div class="prop-group">
-        <div class="prop-group-title">Giao Diện & Kính Mờ (Glassmorphism)</div>
+        <div class="prop-group-title">Quản Lý Lớp & Z-Index (Layer)</div>
+        <div class="prop-row">
+          <label>Z-Index (Lớp hiển thị)</label>
+          <input type="number" id="prop-zIndex" value="${l.zIndex ?? 10}" class="prop-input" />
+        </div>
+        <div style="display:grid; grid-template-columns: repeat(2, 1fr); gap:6px; margin-top:8px;">
+          <button type="button" class="btn-width-pill" id="btn-prop-layer-front">⏫ Lên trên cùng</button>
+          <button type="button" class="btn-width-pill" id="btn-prop-layer-forward">▲ Lên 1 lớp</button>
+          <button type="button" class="btn-width-pill" id="btn-prop-layer-backward">▼ Xuống 1 lớp</button>
+          <button type="button" class="btn-width-pill" id="btn-prop-layer-back">⏬ Xuống đáy</button>
+        </div>
+        <div style="margin-top:10px;">
+          <label class="prop-toggle-label">
+            <input type="checkbox" id="prop-isLocked" ${blk.locked ? 'checked' : ''} class="prop-checkbox" />
+            <span class="prop-toggle-text">🔒 Khóa vị trí (Tránh kéo nhầm)</span>
+          </label>
+        </div>
+      </div>
+
+      <div class="prop-group">
+        <div class="prop-group-title">Giao Diện, Đổ Bóng & Bo Góc (Appearance)</div>
         <div class="prop-toggles-container">
           <label class="prop-toggle-label">
             <input type="checkbox" id="prop-hideHeader" ${s.hideHeader ? 'checked' : ''} class="prop-checkbox" />
@@ -156,28 +190,55 @@ export class BuilderPropertiesPanel {
             <span class="prop-toggle-text">Loại bỏ khung nền (Nền trong suốt)</span>
           </label>
         </div>
+
+        <div class="prop-row">
+          <label>Kiểu đổ bóng nghệ thuật (Shadow Presets)</label>
+          <select id="prop-shadowPreset" class="prop-select">
+            <option value="editorial" ${s.shadowPreset === 'editorial' || !s.shadowPreset ? 'selected' : ''}>Editorial Floating (Tối giản thanh lịch)</option>
+            <option value="soft-ambient" ${s.shadowPreset === 'soft-ambient' ? 'selected' : ''}>Soft Ambient (Mềm mại tỏa rộng)</option>
+            <option value="deep-floating" ${s.shadowPreset === 'deep-floating' ? 'selected' : ''}>Deep Floating (Chiều sâu kiến trúc)</option>
+            <option value="dramatic" ${s.shadowPreset === 'dramatic' ? 'selected' : ''}>Dramatic Horizon (Bóng kịch tính)</option>
+            <option value="glow-cyan" ${s.shadowPreset === 'glow-cyan' ? 'selected' : ''}>Cyan Glow (Ánh sáng Cyan)</option>
+            <option value="none" ${s.shadowPreset === 'none' ? 'selected' : ''}>None (Không bóng đổ)</option>
+          </select>
+        </div>
+
         <div class="prop-row">
           <label>Background Pop-up</label>
           <input type="text" id="prop-background" value="${s.background || 'rgba(18, 21, 28, 0.88)'}" class="prop-input" />
         </div>
         <div class="prop-row-2">
           <div>
-            <label>Blur (px)</label>
-            <input type="text" id="prop-backdropBlur" value="${s.backdropBlur || '20px'}" class="prop-input" />
+            <label>Kính mờ Blur</label>
+            <input type="text" id="prop-backdropBlur" value="${s.backdropBlur || '20px'}" placeholder="20px" class="prop-input" />
           </div>
           <div>
-            <label>Bo góc (px)</label>
-            <input type="text" id="prop-borderRadius" value="${s.borderRadius || '18px'}" class="prop-input" />
+            <label>Bo góc chung</label>
+            <input type="text" id="prop-borderRadius" value="${s.borderRadius || '18px'}" placeholder="18px" class="prop-input" />
           </div>
         </div>
+
+        <div class="prop-row" style="margin-top:4px;">
+          <label style="font-size:11px; color:#94a3b8;">Bo góc độc lập 4 góc (TL, TR, BR, BL):</label>
+          <div style="display:grid; grid-template-columns: repeat(4, 1fr); gap:4px; margin-top:4px;">
+            <input type="text" id="prop-br-tl" value="${s.borderRadiusIndividual?.topLeft || ''}" placeholder="TL" class="prop-input" style="text-align:center; padding:4px;" title="Góc trên-trái" />
+            <input type="text" id="prop-br-tr" value="${s.borderRadiusIndividual?.topRight || ''}" placeholder="TR" class="prop-input" style="text-align:center; padding:4px;" title="Góc trên-phải" />
+            <input type="text" id="prop-br-br" value="${s.borderRadiusIndividual?.bottomRight || ''}" placeholder="BR" class="prop-input" style="text-align:center; padding:4px;" title="Góc dưới-phải" />
+            <input type="text" id="prop-br-bl" value="${s.borderRadiusIndividual?.bottomLeft || ''}" placeholder="BL" class="prop-input" style="text-align:center; padding:4px;" title="Góc dưới-trái" />
+          </div>
+        </div>
+
         <div class="prop-row-2">
           <div>
-            <label>Opacity (0-1)</label>
-            <input type="number" step="0.1" min="0" max="1" id="prop-opacity" value="${s.opacity ?? 1}" class="prop-input" />
+            <label>Độ mờ đục (Opacity)</label>
+            <input type="number" step="0.05" min="0" max="1" id="prop-opacity" value="${s.opacity ?? 1}" class="prop-input" />
           </div>
           <div>
-            <label>Đệm (Padding)</label>
-            <input type="text" id="prop-padding" value="${s.padding || '18px'}" class="prop-input" />
+            <label>Tràn viền (Overflow)</label>
+            <select id="prop-overflow" class="prop-select">
+              <option value="hidden" ${s.overflow === 'hidden' || !s.overflow ? 'selected' : ''}>Cắt viền (Hidden)</option>
+              <option value="visible" ${s.overflow === 'visible' ? 'selected' : ''}>Tràn viền (Bleed / Visible)</option>
+            </select>
           </div>
         </div>
       </div>
@@ -297,16 +358,16 @@ export class BuilderPropertiesPanel {
       ` : ''}
 
       <div class="prop-group">
-        <div class="prop-group-title">Hiệu Ứng Chuyển Động (Animation)</div>
+        <div class="prop-group-title">Hiệu Ứng & Parallax Đa Vận Tốc</div>
         <div class="prop-row">
           <label>Entrance</label>
           <select id="prop-entrance" class="prop-select">
-            <option value="fade-up" ${a.entrance === 'fade-up' ? 'selected' : ''}>Fade Up</option>
-            <option value="fade-in" ${a.entrance === 'fade-in' ? 'selected' : ''}>Fade In</option>
-            <option value="scale-up" ${a.entrance === 'scale-up' ? 'selected' : ''}>Scale Up</option>
-            <option value="slide-left" ${a.entrance === 'slide-left' ? 'selected' : ''}>Slide Left</option>
-            <option value="slide-right" ${a.entrance === 'slide-right' ? 'selected' : ''}>Slide Right</option>
-            <option value="none" ${a.entrance === 'none' ? 'selected' : ''}>None</option>
+            <option value="fade-up" ${a.entrance === 'fade-up' ? 'selected' : ''}>Fade Up (Trượt lên)</option>
+            <option value="fade-in" ${a.entrance === 'fade-in' ? 'selected' : ''}>Fade In (Hiện dần)</option>
+            <option value="scale-up" ${a.entrance === 'scale-up' ? 'selected' : ''}>Scale Up (Phóng to)</option>
+            <option value="slide-left" ${a.entrance === 'slide-left' ? 'selected' : ''}>Slide Left (Từ trái)</option>
+            <option value="slide-right" ${a.entrance === 'slide-right' ? 'selected' : ''}>Slide Right (Từ phải)</option>
+            <option value="none" ${a.entrance === 'none' ? 'selected' : ''}>None (Tức thì)</option>
           </select>
         </div>
         <div class="prop-row-2">
@@ -319,7 +380,69 @@ export class BuilderPropertiesPanel {
             <input type="number" id="prop-animDelay" value="${a.delay || 0}" class="prop-input" />
           </div>
         </div>
+
+        <div class="prop-row">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+            <label style="margin:0;">Vận tốc Parallax khi cuộn (-0.5 đến +0.8)</label>
+            <span id="label-val-parallax" style="font-size:11px; font-weight:700; color:#38bdf8;">${a.parallaxSpeed || 0}</span>
+          </div>
+          <input type="range" id="prop-parallax-slider" min="-0.5" max="0.8" step="0.05" value="${a.parallaxSpeed || 0}" class="text-font-size-slider" />
+          <div style="font-size:10.5px; color:#64748b; margin-top:4px; line-height:1.4;">
+            💡 <strong>Hiệu ứng thị sai (3D Optical Depth):</strong> Cho phép popup này di chuyển nhanh hơn hoặc chậm hơn ảnh nền khi cuộn chuột.
+          </div>
+        </div>
       </div>
+
+      ${blk.type === 'info-card' ? `
+      <div class="prop-group">
+        <div class="prop-group-title">Nội Dung Thẻ Thông Tin (Info Card)</div>
+        <div class="prop-row">
+          <label>Nhãn phụ / Tagline</label>
+          <input type="text" id="prop-infocard-tagline" value="${blk.content.tagline || ''}" placeholder="e.g. RESIDENTIAL SUITE • VILLA 08" class="prop-input" />
+        </div>
+        <div class="prop-row">
+          <label>Tên phòng / Dự án</label>
+          <input type="text" id="prop-infocard-title" value="${blk.content.title || ''}" placeholder="e.g. Villa Horizon Sanctuary" class="prop-input" />
+        </div>
+        <div class="prop-row">
+          <label>Đoạn mô tả ngắn</label>
+          <textarea id="prop-infocard-desc" rows="3" class="prop-input" style="resize:vertical;">${blk.content.description || ''}</textarea>
+        </div>
+        <div class="prop-row">
+          <label>Mức giá hiển thị</label>
+          <input type="text" id="prop-infocard-price" value="${blk.content.price || ''}" placeholder="e.g. 45 Tỷ VNĐ" class="prop-input" />
+        </div>
+        <div class="prop-row">
+          <label>Chữ trên nút CTA</label>
+          <input type="text" id="prop-infocard-ctaText" value="${blk.content.ctaText || ''}" placeholder="e.g. ĐẶT LỊCH THAM QUAN" class="prop-input" />
+        </div>
+      </div>
+      ` : ''}
+
+      ${blk.type === 'container' ? `
+      <div class="prop-group">
+        <div class="prop-group-title">Cấu Hình Custom Container</div>
+        <div class="prop-row">
+          <label>Bố cục hiển thị (Layout)</label>
+          <select id="prop-container-layout" class="prop-select">
+            <option value="column" ${blk.content.layoutType === 'column' || !blk.content.layoutType ? 'selected' : ''}>Dọc (Ảnh trên - Chữ dưới)</option>
+            <option value="row" ${blk.content.layoutType === 'row' ? 'selected' : ''}>Ngang (Ảnh trái - Chữ phải)</option>
+          </select>
+        </div>
+        <div class="prop-row">
+          <label>Tiêu đề phụ (Subhead)</label>
+          <input type="text" id="prop-container-subhead" value="${blk.content.subhead || ''}" placeholder="e.g. KIẾN TRÚC & ÁNH SÁNG" class="prop-input" />
+        </div>
+        <div class="prop-row">
+          <label>Tiêu đề chính (Headline)</label>
+          <input type="text" id="prop-container-headline" value="${blk.content.headline || ''}" placeholder="e.g. Tuyệt tác kiến trúc..." class="prop-input" />
+        </div>
+        <div class="prop-row">
+          <label>Nội dung chi tiết</label>
+          <textarea id="prop-container-bodytext" rows="3" class="prop-input" style="resize:vertical;">${blk.content.bodyText || ''}</textarea>
+        </div>
+      </div>
+      ` : ''}
 
       ${blk.type === 'hero-video' ? `
       <div class="prop-group">
@@ -587,9 +710,137 @@ export class BuilderPropertiesPanel {
     bindVal('prop-borderRadius', (v) => (blk.styling.borderRadius = v));
     bindVal('prop-opacity', (v) => (blk.styling.opacity = parseFloat(v)));
     bindVal('prop-padding', (v) => (blk.styling.padding = v));
+    bindVal('prop-overflow', (v) => (blk.styling.overflow = v as any));
     bindVal('prop-entrance', (v) => (blk.animation.entrance = v as any));
     bindVal('prop-animDuration', (v) => (blk.animation.duration = parseInt(v, 10)));
     bindVal('prop-animDelay', (v) => (blk.animation.delay = parseInt(v, 10)));
+
+    // Shadow Presets
+    const shadowSelect = this.element.querySelector('#prop-shadowPreset') as HTMLSelectElement;
+    shadowSelect?.addEventListener('change', () => {
+      blk.styling.shadowPreset = shadowSelect.value as any;
+      const blockEl = document.querySelector(`[data-block-id="${blk.id}"]`) as HTMLElement;
+      if (blockEl) {
+        const presetShadows: Record<string, string> = {
+          'none': 'none',
+          'editorial': '0 20px 40px -15px rgba(0,0,0,0.5), 0 0 20px rgba(0,0,0,0.15)',
+          'soft-ambient': '0 30px 60px rgba(0,0,0,0.35), 0 12px 24px rgba(0,0,0,0.2)',
+          'deep-floating': '0 35px 80px rgba(0,0,0,0.7), 0 15px 35px rgba(0,0,0,0.45)',
+          'dramatic': '0 50px 100px -20px rgba(0,0,0,0.85), 0 30px 60px -30px rgba(0,0,0,0.9)',
+          'glow-cyan': '0 20px 50px rgba(56, 189, 248, 0.25), 0 0 25px rgba(56, 189, 248, 0.15)'
+        };
+        blockEl.style.boxShadow = presetShadows[shadowSelect.value] || 'none';
+      }
+      this.state.saveSnapshot();
+      this.state.emitter.emit('builder:block-updated', blk);
+    });
+
+    // Rotation & Scale Sliders
+    const rotSlider = this.element.querySelector('#prop-rotate-slider') as HTMLInputElement;
+    const rotLabel = this.element.querySelector('#label-val-rotate');
+    rotSlider?.addEventListener('input', () => {
+      const deg = parseInt(rotSlider.value, 10);
+      if (!blk.transform) blk.transform = {};
+      blk.transform.rotate = deg;
+      if (rotLabel) rotLabel.textContent = `${deg}°`;
+      const blockEl = document.querySelector(`[data-block-id="${blk.id}"]`) as HTMLElement;
+      if (blockEl) {
+        const transform = blockEl.style.transform || '';
+        const withoutRotate = transform.replace(/rotate\([^)]+\)/g, '').trim();
+        blockEl.style.transform = `${withoutRotate} rotate(${deg}deg)`.trim();
+      }
+    });
+    rotSlider?.addEventListener('change', () => {
+      this.state.saveSnapshot();
+      this.state.emitter.emit('builder:block-updated', blk);
+    });
+
+    const scaleSlider = this.element.querySelector('#prop-scale-slider') as HTMLInputElement;
+    const scaleLabel = this.element.querySelector('#label-val-scale');
+    scaleSlider?.addEventListener('input', () => {
+      const sc = parseFloat(scaleSlider.value);
+      if (!blk.transform) blk.transform = {};
+      blk.transform.scale = sc;
+      if (scaleLabel) scaleLabel.textContent = `${sc}x`;
+      const blockEl = document.querySelector(`[data-block-id="${blk.id}"]`) as HTMLElement;
+      if (blockEl) {
+        const transform = blockEl.style.transform || '';
+        const withoutScale = transform.replace(/scale\([^)]+\)/g, '').trim();
+        blockEl.style.transform = `${withoutScale} scale(${sc})`.trim();
+      }
+    });
+    scaleSlider?.addEventListener('change', () => {
+      this.state.saveSnapshot();
+      this.state.emitter.emit('builder:block-updated', blk);
+    });
+
+    // Layer action buttons in Inspector
+    this.element.querySelector('#btn-prop-layer-front')?.addEventListener('click', () => this.state.bringToFront(blk.id));
+    this.element.querySelector('#btn-prop-layer-forward')?.addEventListener('click', () => this.state.moveForward(blk.id));
+    this.element.querySelector('#btn-prop-layer-backward')?.addEventListener('click', () => this.state.moveBackward(blk.id));
+    this.element.querySelector('#btn-prop-layer-back')?.addEventListener('click', () => this.state.sendToBack(blk.id));
+
+    // Lock element
+    const lockBox = this.element.querySelector('#prop-isLocked') as HTMLInputElement;
+    lockBox?.addEventListener('change', () => {
+      blk.locked = lockBox.checked;
+      this.state.saveSnapshot();
+      this.state.emitter.emit('builder:page-updated', this.state.page);
+    });
+
+    // 4 Corners Border Radius
+    const bindRadiusCorner = (id: string, corner: 'topLeft' | 'topRight' | 'bottomRight' | 'bottomLeft') => {
+      const inp = this.element.querySelector(`#${id}`) as HTMLInputElement;
+      inp?.addEventListener('change', () => {
+        if (!blk.styling.borderRadiusIndividual) blk.styling.borderRadiusIndividual = {};
+        blk.styling.borderRadiusIndividual[corner] = inp.value.trim();
+        const blockEl = document.querySelector(`[data-block-id="${blk.id}"]`) as HTMLElement;
+        if (blockEl) {
+          if (corner === 'topLeft') blockEl.style.borderTopLeftRadius = inp.value.trim();
+          if (corner === 'topRight') blockEl.style.borderTopRightRadius = inp.value.trim();
+          if (corner === 'bottomRight') blockEl.style.borderBottomRightRadius = inp.value.trim();
+          if (corner === 'bottomLeft') blockEl.style.borderBottomLeftRadius = inp.value.trim();
+        }
+        this.state.saveSnapshot();
+        this.state.emitter.emit('builder:block-updated', blk);
+      });
+    };
+    bindRadiusCorner('prop-br-tl', 'topLeft');
+    bindRadiusCorner('prop-br-tr', 'topRight');
+    bindRadiusCorner('prop-br-br', 'bottomRight');
+    bindRadiusCorner('prop-br-bl', 'bottomLeft');
+
+    // Multi-speed Parallax slider
+    const plxSlider = this.element.querySelector('#prop-parallax-slider') as HTMLInputElement;
+    const plxLabel = this.element.querySelector('#label-val-parallax');
+    plxSlider?.addEventListener('input', () => {
+      const spd = parseFloat(plxSlider.value);
+      blk.animation.parallaxSpeed = spd;
+      if (plxLabel) plxLabel.textContent = String(spd);
+      const blockEl = document.querySelector(`[data-block-id="${blk.id}"]`) as HTMLElement;
+      if (blockEl) blockEl.dataset.parallaxSpeed = String(spd);
+    });
+    plxSlider?.addEventListener('change', () => {
+      this.state.saveSnapshot();
+      this.state.emitter.emit('builder:block-updated', blk);
+    });
+
+    // Info Card Bindings
+    if (blk.type === 'info-card') {
+      bindVal('prop-infocard-tagline', (v) => (blk.content.tagline = v));
+      bindVal('prop-infocard-title', (v) => (blk.content.title = v));
+      bindVal('prop-infocard-desc', (v) => (blk.content.description = v));
+      bindVal('prop-infocard-price', (v) => (blk.content.price = v));
+      bindVal('prop-infocard-ctaText', (v) => (blk.content.ctaText = v));
+    }
+
+    // Container Bindings
+    if (blk.type === 'container') {
+      bindVal('prop-container-layout', (v) => (blk.content.layoutType = v as any));
+      bindVal('prop-container-subhead', (v) => (blk.content.subhead = v));
+      bindVal('prop-container-headline', (v) => (blk.content.headline = v));
+      bindVal('prop-container-bodytext', (v) => (blk.content.bodyText = v));
+    }
 
     const bindCheck = (id: string, setter: (val: boolean) => void) => {
       const el = this.element.querySelector(`#${id}`) as HTMLInputElement;

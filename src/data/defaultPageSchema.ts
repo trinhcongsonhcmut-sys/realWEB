@@ -73,120 +73,295 @@ export const DEFAULT_PAGE_SCHEMA: PageSchema = {
         parallax: true
       },
       blocks: [
-        // Pop-up ảnh lớn
+        // 1. Pop-up ảnh lớn trung tâm (Hero Visual)
         {
-          id: 'blk-img-large',
+          id: 'blk-img-hero',
           type: 'image',
           order: 1,
           enabled: true,
-          title: 'Phối Cảnh Toàn Cảnh',
+          title: 'Tuyệt Tác Kiến Trúc Toàn Cảnh',
           layout: {
-            width: '520px',
-            height: 'auto',
+            width: '640px',
+            height: '460px',
             position: 'absolute',
-            x: '80px',
-            y: '100px',
+            x: '120px',
+            y: '90px',
             zIndex: 10
           },
+          transform: {
+            rotate: -1,
+            scale: 1.0
+          },
           styling: {
-            background: 'rgba(18, 22, 32, 0.9)',
+            background: 'rgba(15, 20, 30, 0.85)',
             backdropBlur: '20px',
-            borderRadius: '20px',
+            borderRadius: '24px',
+            borderRadiusIndividual: {
+              topLeft: '28px',
+              topRight: '12px',
+              bottomRight: '36px',
+              bottomLeft: '16px'
+            },
             border: '1px solid rgba(255, 255, 255, 0.12)',
-            shadow: '0 30px 60px rgba(0, 0, 0, 0.6)',
-            padding: '16px'
+            shadowPreset: 'editorial',
+            shadow: '0 32px 70px -15px rgba(0, 0, 0, 0.7), 0 0 0 1px rgba(255, 255, 255, 0.08)',
+            padding: '12px',
+            overflow: 'visible'
           },
           animation: {
             entrance: 'fade-up',
             scrollTrigger: 'center',
-            duration: 500
+            duration: 700,
+            parallaxSpeed: 0.05
           },
           responsive: {},
           content: {
             imageUrl: '/assets/frames/frame_0000.webp',
             alt: 'Toàn cảnh Landmark',
-            caption: 'Góc nhìn từ trên cao bao trọn hồ cảnh quan và quảng trường',
-            badge: 'ẢNH LỚN',
+            caption: 'Khối tháp chính giữa công viên đồi và mặt hồ sinh thái',
+            badge: 'KIẾN TRÚC TRUNG TÂM',
             sizeType: 'large'
           }
         },
-        // Pop-up văn bản
+
+        // 2. Pop-up ảnh vệ tinh 1: Lệch góc trên trái (Top-Left)
         {
-          id: 'blk-text-intro',
-          type: 'text',
+          id: 'blk-img-sat-1',
+          type: 'image',
           order: 2,
           enabled: true,
-          title: 'Thông Tin Giới Thiệu',
+          title: 'Góc Cận Cảnh Không Gian',
           layout: {
-            width: '460px',
+            width: '260px',
             height: 'auto',
             position: 'absolute',
-            x: '640px',
-            y: '120px',
-            zIndex: 20
+            x: '40px',
+            y: '30px',
+            zIndex: 8
+          },
+          transform: {
+            rotate: -3.5,
+            scale: 1.0
           },
           styling: {
-            background: 'rgba(22, 27, 39, 0.92)',
-            backdropBlur: '24px',
+            background: 'rgba(18, 22, 34, 0.88)',
+            backdropBlur: '16px',
+            borderRadius: '18px',
+            borderRadiusIndividual: {
+              topLeft: '24px',
+              topRight: '24px',
+              bottomRight: '12px',
+              bottomLeft: '12px'
+            },
+            border: '1px solid rgba(255, 255, 255, 0.1)',
+            shadowPreset: 'soft-ambient',
+            shadow: '0 20px 45px -10px rgba(0, 0, 0, 0.6)',
+            padding: '10px'
+          },
+          animation: {
+            entrance: 'fade-in',
+            scrollTrigger: 'center',
+            duration: 600,
+            delay: 100,
+            parallaxSpeed: -0.14
+          },
+          responsive: {},
+          content: {
+            imageUrl: '/assets/frames/frame_0060.webp',
+            alt: 'Vật liệu tự nhiên',
+            caption: 'Đá cẩm thạch Ý & lam nhôm anodized cao cấp',
+            badge: 'CHI TIẾT VẬT LIỆU',
+            sizeType: 'small'
+          }
+        },
+
+        // 3. Pop-up ảnh vệ tinh 2: Lệch góc trên phải (Top-Right)
+        {
+          id: 'blk-img-sat-2',
+          type: 'image',
+          order: 3,
+          enabled: true,
+          title: 'Tầm Nhìn Hoàng Hôn Skyline',
+          layout: {
+            width: '280px',
+            height: 'auto',
+            position: 'absolute',
+            x: '860px',
+            y: '50px',
+            zIndex: 15
+          },
+          transform: {
+            rotate: 2.5,
+            scale: 1.0
+          },
+          styling: {
+            background: 'rgba(18, 22, 34, 0.88)',
+            backdropBlur: '16px',
             borderRadius: '20px',
-            border: '1px solid rgba(56, 189, 248, 0.25)',
-            shadow: '0 30px 60px rgba(0, 0, 0, 0.65)',
-            padding: '24px'
+            border: '1px solid rgba(255, 255, 255, 0.12)',
+            shadowPreset: 'deep-floating',
+            shadow: '0 28px 55px -10px rgba(0, 0, 0, 0.75)',
+            padding: '10px'
+          },
+          animation: {
+            entrance: 'scale-up',
+            scrollTrigger: 'center',
+            duration: 650,
+            delay: 200,
+            parallaxSpeed: 0.16
+          },
+          responsive: {},
+          content: {
+            imageUrl: '/assets/frames/frame_0120.webp',
+            alt: 'Hoàng hôn đường chân trời',
+            caption: 'Skyline rực rỡ từ ban công kính vô cực',
+            badge: 'SKYLINE VIEW',
+            sizeType: 'small'
+          }
+        },
+
+        // 4. Pop-up ảnh vệ tinh 3: Lệch góc dưới phải (Bottom-Right)
+        {
+          id: 'blk-img-sat-3',
+          type: 'image',
+          order: 4,
+          enabled: true,
+          title: 'Hồ Bơi Vô Cực Chân Mây',
+          layout: {
+            width: '310px',
+            height: 'auto',
+            position: 'absolute',
+            x: '820px',
+            y: '440px',
+            zIndex: 12
+          },
+          transform: {
+            rotate: -2,
+            scale: 1.0
+          },
+          styling: {
+            background: 'rgba(18, 22, 34, 0.88)',
+            backdropBlur: '18px',
+            borderRadius: '22px',
+            border: '1px solid rgba(255, 255, 255, 0.1)',
+            shadowPreset: 'editorial',
+            shadow: '0 32px 70px -15px rgba(0, 0, 0, 0.7)',
+            padding: '10px'
+          },
+          animation: {
+            entrance: 'fade-up',
+            scrollTrigger: 'center',
+            duration: 700,
+            delay: 350,
+            parallaxSpeed: -0.09
+          },
+          responsive: {},
+          content: {
+            imageUrl: '/assets/frames/frame_0180.webp',
+            alt: 'Hồ bơi vô cực',
+            caption: 'Làn nước phẳng lặng kết nối trực tiếp với chân trời',
+            badge: 'TIỆN ÍCH NGOẠI KHU',
+            sizeType: 'small'
+          }
+        },
+
+        // 5. Pop-up thông tin BĐS chồng đè (Overlapping Information Card)
+        {
+          id: 'blk-info-card-1',
+          type: 'info-card',
+          order: 5,
+          enabled: true,
+          title: 'Thông Số Biệt Thự Horizon',
+          layout: {
+            width: '390px',
+            height: 'auto',
+            position: 'absolute',
+            x: '540px',
+            y: '210px',
+            zIndex: 35
+          },
+          transform: {
+            rotate: 1,
+            scale: 1.0
+          },
+          styling: {
+            background: 'rgba(15, 20, 32, 0.94)',
+            backdropBlur: '24px',
+            borderRadius: '24px',
+            border: '1px solid rgba(56, 189, 248, 0.3)',
+            shadowPreset: 'deep-floating',
+            shadow: '0 30px 60px -12px rgba(0, 0, 0, 0.8), 0 0 25px rgba(56, 189, 248, 0.15)',
+            padding: '22px'
           },
           animation: {
             entrance: 'slide-right',
             scrollTrigger: 'center',
             duration: 600,
-            delay: 150
+            delay: 250,
+            parallaxSpeed: 0.26
           },
           responsive: {},
           content: {
-            text: 'Tọa lạc tại tâm điểm phồn hoa, công trình hội tụ các giá trị kiến trúc tinh tế nhất cùng hệ sinh thái tiện ích chuẩn quốc tế.\n\nKhông gian được thiết kế mở tối đa với tầm nhìn bao trọn hồ cảnh quan trung tâm, mang đến trải nghiệm sống thượng lưu khác biệt.',
-            fontFamily: "'Be Vietnam Pro', sans-serif",
-            fontSize: '16px',
-            fontWeight: '400',
-            fontStyle: 'normal',
-            textAlign: 'left',
-            textColor: '#f1f5f9',
-            lineHeight: '1.7'
+            tagline: 'THE SKY HORIZON • PRIVATE SUITE',
+            title: 'Penthouse Panorama 360',
+            description: 'Bố cục mở phi đối xứng tối ưu ánh sáng tự nhiên với trần cao thông tầng 7.2m và hệ vách kính cong không khung viền.',
+            price: '38.5 TỶ VNĐ',
+            metrics: [
+              { label: 'DIỆN TÍCH', value: '428 m²' },
+              { label: 'TẦM NHÌN', value: '360° Panorama' },
+              { label: 'PHÒNG NGỦ', value: '4 Master' },
+              { label: 'HỒ BƠI', value: 'Riêng tư' }
+            ],
+            ctaText: 'Đăng Ký Tư Vấn Ngay',
+            ctaLink: '#contact'
           }
         },
-        // Pop-up ảnh nhỏ
+
+        // 6. Pop-up văn bản trích dẫn phong cách sống (Editorial Text Card)
         {
-          id: 'blk-img-small',
-          type: 'image',
-          order: 3,
+          id: 'blk-text-quote',
+          type: 'text',
+          order: 6,
           enabled: true,
-          title: 'Chi Tiết Mặt Tiền',
+          title: 'Triết Lý Thiết Kế',
           layout: {
-            width: '280px',
+            width: '330px',
             height: 'auto',
             position: 'absolute',
-            x: '640px',
-            y: '480px',
-            zIndex: 30
+            x: '180px',
+            y: '400px',
+            zIndex: 28
+          },
+          transform: {
+            rotate: -1.5,
+            scale: 1.0
           },
           styling: {
-            background: 'rgba(15, 18, 26, 0.92)',
-            backdropBlur: '18px',
-            borderRadius: '16px',
-            border: '1px solid rgba(255, 255, 255, 0.15)',
-            shadow: '0 20px 40px rgba(0, 0, 0, 0.55)',
-            padding: '12px'
+            background: 'rgba(20, 25, 38, 0.92)',
+            backdropBlur: '20px',
+            borderRadius: '18px',
+            border: '1px solid rgba(255, 255, 255, 0.14)',
+            shadowPreset: 'soft-ambient',
+            shadow: '0 20px 45px -10px rgba(0, 0, 0, 0.6)',
+            padding: '20px'
           },
           animation: {
-            entrance: 'scale-up',
+            entrance: 'fade-up',
             scrollTrigger: 'center',
-            duration: 450,
-            delay: 300
+            duration: 650,
+            delay: 300,
+            parallaxSpeed: 0.18
           },
           responsive: {},
           content: {
-            imageUrl: '/assets/frames/frame_0060.webp',
-            alt: 'Chi tiết mặt tiền',
-            caption: 'Góc cận cảnh đường nét hoàn thiện',
-            badge: 'CHI TIẾT',
-            sizeType: 'small'
+            text: '“Kiến trúc đỉnh cao không áp đặt tự nhiên, mà tạo ra sự giao thoa mềm mại giữa nghệ thuật thị giác và trải nghiệm xúc cảm sống động.”',
+            fontFamily: "'Be Vietnam Pro', sans-serif",
+            fontSize: '15px',
+            fontWeight: '400',
+            fontStyle: 'italic',
+            textAlign: 'justify',
+            textColor: '#e2e8f0',
+            lineHeight: '1.8'
           }
         }
       ]

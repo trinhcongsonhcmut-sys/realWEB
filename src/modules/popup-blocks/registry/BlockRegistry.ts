@@ -12,6 +12,8 @@ import { Model3DBlock } from '../blocks/Model3DBlock';
 import { MapBlock } from '../blocks/MapBlock';
 import { SpecificationsBlock } from '../blocks/SpecificationsBlock';
 import { ComparisonBlock } from '../blocks/ComparisonBlock';
+import { InformationCardBlock } from '../blocks/InformationCardBlock';
+import { CustomContainerBlock } from '../blocks/CustomContainerBlock';
 
 export interface BlockMetadata {
   type: BlockType;
@@ -231,6 +233,50 @@ export class BlockRegistry {
         icon: 'box',
         defaultContent: { modelUrl: '/assets/houses/custom-room/livingroom_wabisabi_mix.glb', enableWalkthrough: true },
         defaultLayout: { width: '100%', height: '100vh', position: 'relative' }
+      }
+    );
+
+    this.register(
+      'info-card',
+      (schema, emitter) => new InformationCardBlock(schema, emitter),
+      {
+        type: 'info-card',
+        name: 'Thẻ Thông Tin BĐS (Information Card)',
+        description: 'Thẻ thông số căn hộ / villa cao cấp chuẩn Editorial: tên phòng, diện tích, giá bán, tiện ích, nút CTA',
+        icon: 'credit-card',
+        defaultContent: {
+          tagline: 'RESIDENTIAL SUITE • VILLA 08',
+          title: 'The Horizon Sanctuary',
+          description: 'Tuyệt tác không gian mở với tầm nhìn panorama 360 độ ôm trọn hồ cảnh quan trung tâm.',
+          price: '45 Tỷ VNĐ',
+          metrics: [
+            { label: 'DIỆN TÍCH', value: '420 m²' },
+            { label: 'PHÒNG NGỦ', value: '4 Beds • 5 Baths' },
+            { label: 'HƯỚNG NHÀ', value: 'Đông Nam' }
+          ],
+          ctaText: 'ĐẶT LỊCH THAM QUAN'
+        },
+        defaultLayout: { width: '420px', height: 'auto', position: 'absolute', x: '580px', y: '160px', zIndex: 25 }
+      }
+    );
+
+    this.register(
+      'container',
+      (schema, emitter) => new CustomContainerBlock(schema, emitter),
+      {
+        type: 'container',
+        name: 'Khối Phối Hợp (Custom Container)',
+        description: 'Container kết hợp linh hoạt giữa hình ảnh kiến trúc và văn bản giới thiệu theo hàng ngang hoặc dọc',
+        icon: 'layout',
+        defaultContent: {
+          layoutType: 'column',
+          mediaUrl: '/assets/frames/frame_0000.webp',
+          mediaType: 'image',
+          subhead: 'KIẾN TRÚC & ÁNH SÁNG',
+          headline: 'Sự giao hòa giữa thiên nhiên và vật liệu đương đại',
+          bodyText: 'Mỗi chi tiết đều được trau chuốt tỉ mỉ nhằm tối ưu hóa ánh sáng tự nhiên và luồng đối lưu không khí trong lành.'
+        },
+        defaultLayout: { width: '460px', height: 'auto', position: 'absolute', x: '680px', y: '200px', zIndex: 18 }
       }
     );
   }

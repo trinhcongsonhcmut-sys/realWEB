@@ -11,6 +11,12 @@ export class BuilderState {
   public currentDevice: DeviceType = 'desktop';
   public isEditMode: boolean = false; // Toggle between preview & visual edit
 
+  // Canvas Viewport Controls
+  public zoomLevel: number = 1.0;
+  public showGrid: boolean = false;
+  public snapToGrid: boolean = false;
+  public gridSize: number = 20;
+
   private undoStack: string[] = [];
   private redoStack: string[] = [];
 
@@ -217,6 +223,118 @@ export class BuilderState {
         return;
       }
     }
+  }
+
+  public setZoom(zoom: number): void {
+    this.zoomLevel = Math.max(0.4, Math.min(2.0, Math.round(zoom * 100) / 100));
+    this.emitter.emit('builder:zoom-changed', this.zoomLevel);
+  }
+
+  public toggleGrid(): boolean {
+    this.showGrid = !this.showGrid;
+    this.emitter.emit('builder:grid-toggled', this.showGrid);
+    return this.showGrid;
+  }
+
+  public toggleSnap(): boolean {
+    this.snapToGrid = !this.snapToGrid;
+    this.emitter.emit('builder:snap-toggled', this.snapToGrid);
+    return this.snapToGrid;
+  }
+
+  public lockBlock(blockId: string): boolean {
+    const blk = this.getActiveBlock();
+    if (blk && blk.id === blockId) {
+      this.saveSnapshot();
+      blk.locked = !blk.locked;
+      this.emitter.emit('builder:page-updated', this.page);
+      return !!blk.locked;
+    }
+    return false;
+  }
+
+  public bringToFront(blockId: string): void {
+    const sec = this.getActiveSection();
+    if (!sec) return;
+    const blk = sec.blocks.find((b) => b.id === blockId);
+    if (!blk) return;
+    this.saveSnapshot();
+
+    const maxZ = Math.max(10, ...sec.blocks.map((b) => b.layout.zIndex || 10));
+    blk.layout.zIndex = maxZ + 1;
+
+    // Move to end of blocks array so it renders last (on top in DOM)
+    const idx = sec.blocks.findIndex((b) => b.id === blockId);
+    if (idx !== -1 && idx < sec.blocks.length - 1) {
+      sec.blocks.splice(idx, 1);
+      sec.blocks.push(blk);
+    }
+
+    this.emitter.emit('builder:page-updated', this.page);
+  }
+
+  public sendToBack(blockId: string): void {
+    const sec = this.getActiveSection();
+    if (!sec) return;
+    const blk = sec.blocks.find((b) => b.id === blockId);
+    if (!blk) return;
+    this.saveSnapshot();
+
+    const minZ = Math.min(10, ...sec.blocks.map((b) => b.layout.zIndex || 10));
+    blk.layout.zIndex = Math.max(1, minZ - 1);
+
+    // Move to beginning of blocks array so it renders first (underneath in DOM)
+    const idx = sec.blocks.findIndex((b) => b.id === blockId);
+    if (idx > 0) {
+      sec.blocks.splice(idx, 1);
+      sec.blocks.unshift(blk);
+    }
+
+    this.emitter.emit('builder:page-updated', this.page);
+  }
+
+  public moveForward(blockId: string): void {
+    const sec = this.getActiveSection();
+    if (!sec) return;
+    const idx = sec.blocks.findIndex((b) => b.id === blockId);
+    if (idx === -1 || idx >= sec.blocks.length - 1) return;
+    this.saveSnapshot();
+
+    const blk = sec.blocks[idx];
+    const nextBlk = sec.blocks[idx + 1];
+
+    sec.blocks[idx] = nextBlk;
+    sec.blocks[idx + 1] = blk;
+
+    const curZ = blk.layout.zIndex || 10;
+    const nextZ = nextBlk.layout.zIndex || 10;
+    if (curZ <= nextZ) {
+      blk.layout.zIndex = nextZ + 1;
+    }
+
+    this.emitter.emit('builder:page-updated', this.page);
+  }
+
+  public moveBackward(blockId: string): void {
+    const sec = this.getActiveSection();
+    if (!sec) return;
+    const idx = sec.blocks.findIndex((b) => b.id === blockId);
+    if (idx <= 0) return;
+    this.saveSnapshot();
+
+    const blk = sec.blocks[idx];
+    const prevBlk = sec.blocks[idx - 1];
+
+    sec.blocks[idx] = prevBlk;
+    sec.blocks[idx - 1] = blk;
+
+    const curZ = blk.layout.zIndex || 10;
+    const prevZ = prevBlk.layout.zIndex || 10;
+    if (curZ >= prevZ) {
+      blk.layout.zIndex = Math.max(1, prevZ - 1);
+    }
+
+    this.emitter.emit('builder:page-updated', this.page);
   }
 
   public saveDraft(): boolean {

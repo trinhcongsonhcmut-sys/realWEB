@@ -90,13 +90,31 @@ export class ScrollingPageEngine {
 
     // Parallax update
     this.sectionContainers.forEach((sec) => {
-      if (sec.schema.layout.parallax) {
-        const rect = sec.element.getBoundingClientRect();
-        if (rect.top < vh && rect.bottom > 0) {
-          const offset = (rect.top - vh / 2) * 0.18;
+      const rect = sec.element.getBoundingClientRect();
+      const inView = rect.top < vh && rect.bottom > 0;
+
+      if (inView) {
+        // Section wrapper level parallax
+        if (sec.schema.layout.parallax) {
+          const offset = (rect.top - vh / 2) * 0.12;
           const wrapper = sec.getInnerWrapper();
           wrapper.style.transform = `translateY(${offset}px)`;
         }
+
+        // Block level independent multi-speed parallax
+        sec.blockElements.forEach((el, blockId) => {
+          const speedAttr = el.dataset.parallaxSpeed;
+          if (speedAttr !== undefined) {
+            const speed = parseFloat(speedAttr);
+            if (!isNaN(speed) && speed !== 0) {
+              const delta = Math.round((rect.top - vh / 2) * speed);
+              const schema = sec.schema.blocks.find((b) => b.id === blockId);
+              const rot = schema?.transform?.rotate ? `rotate(${schema.transform.rotate}deg)` : '';
+              const sc = schema?.transform?.scale && schema.transform.scale !== 1 ? `scale(${schema.transform.scale})` : '';
+              el.style.transform = `translateY(${delta}px) ${rot} ${sc}`.trim();
+            }
+          }
+        });
       }
     });
 
