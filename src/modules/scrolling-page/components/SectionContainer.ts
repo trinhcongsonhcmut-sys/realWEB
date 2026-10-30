@@ -20,6 +20,12 @@ export class SectionContainer {
     const layout = this.schema.layout;
     if (layout.height) sec.style.height = layout.height;
     if (layout.minHeight) sec.style.minHeight = layout.minHeight;
+    if (layout.width) sec.style.width = layout.width;
+    if (layout.maxWidth) sec.style.maxWidth = layout.maxWidth;
+    if ((layout.width && layout.width !== '100%') || (layout.maxWidth && layout.maxWidth !== 'none' && layout.maxWidth !== '100%')) {
+      sec.style.marginLeft = 'auto';
+      sec.style.marginRight = 'auto';
+    }
     if (layout.background) sec.style.background = layout.background;
 
     if (layout.sticky) {

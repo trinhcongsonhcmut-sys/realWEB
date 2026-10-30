@@ -78,6 +78,8 @@ export interface PopupBlockSchema<TContent = any> {
 export interface SectionLayoutConfig {
   height: string; // e.g. "100vh", "650px", "auto"
   minHeight?: string;
+  width?: string; // e.g. "100%", "1440px", "1200px", "90%"
+  maxWidth?: string; // e.g. "1440px", "1600px", "none"
   background?: string;
   sticky?: boolean;
   parallax?: boolean;

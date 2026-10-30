@@ -190,17 +190,11 @@ export class BuilderPropertiesPanel {
           <textarea id="prop-text-content" rows="4" class="prop-input" style="resize: vertical; font-family: inherit; line-height: 1.4;">${blk.content.text || ''}</textarea>
         </div>
         <div class="prop-row">
-          <label>Phông chữ (Font Family)</label>
+          <label>Phông chữ (Be Vietnam Pro Chuẩn Quốc Tế & Tiếng Việt)</label>
           <select id="prop-font-family" class="prop-select">
-            <option value="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" ${(blk.content.fontFamily || '').includes('Segoe UI') || !blk.content.fontFamily ? 'selected' : ''}>Hệ thống (Sans-Serif Hiện Đại)</option>
-            <option value="'Playfair Display', Georgia, serif" ${(blk.content.fontFamily || '').includes('Playfair') ? 'selected' : ''}>Playfair Display (Serif Sang Trọng)</option>
-            <option value="'Inter', sans-serif" ${(blk.content.fontFamily || '').includes('Inter') ? 'selected' : ''}>Inter (Hiện Đại / Chuẩn UI)</option>
-            <option value="'Montserrat', sans-serif" ${(blk.content.fontFamily || '').includes('Montserrat') ? 'selected' : ''}>Montserrat (Hình Học / Sắc Nét)</option>
-            <option value="'Roboto', sans-serif" ${(blk.content.fontFamily || '').includes('Roboto') ? 'selected' : ''}>Roboto (Cân Đối)</option>
-            <option value="'Merriweather', Georgia, serif" ${(blk.content.fontFamily || '').includes('Merriweather') ? 'selected' : ''}>Merriweather (Cổ Điển)</option>
-            <option value="'Oswald', sans-serif" ${(blk.content.fontFamily || '').includes('Oswald') ? 'selected' : ''}>Oswald (Mạnh Mẽ / Khối)</option>
-            <option value="'Courier New', monospace" ${(blk.content.fontFamily || '').includes('Courier') ? 'selected' : ''}>Courier New (Monospace)</option>
+            <option value="'Be Vietnam Pro', sans-serif" selected>Be Vietnam Pro (Chuẩn Quốc Tế & Tiếng Việt Hoàn Hảo)</option>
           </select>
+          <div style="font-size:11px; color:#38bdf8; margin-top:4px;">✨ Toàn bộ hệ thống áp dụng độc quyền Be Vietnam Pro sắc nét, không lỗi dấu.</div>
         </div>
 
         <div class="prop-row-2">
@@ -235,20 +229,25 @@ export class BuilderPropertiesPanel {
           </div>
         </div>
 
-        <div class="prop-row-2">
-          <div>
-            <label>Căn lề (Align)</label>
-            <select id="prop-text-align" class="prop-select">
-              <option value="left" ${blk.content.textAlign === 'left' || !blk.content.textAlign ? 'selected' : ''}>Trái</option>
-              <option value="center" ${blk.content.textAlign === 'center' ? 'selected' : ''}>Giữa</option>
-              <option value="right" ${blk.content.textAlign === 'right' ? 'selected' : ''}>Phải</option>
-              <option value="justify" ${blk.content.textAlign === 'justify' ? 'selected' : ''}>Đều 2 bên</option>
-            </select>
+        <div class="prop-row">
+          <label>Căn lề văn bản (Text Align)</label>
+          <div class="prop-align-segmented">
+            <button type="button" class="btn-align-pill ${blk.content.textAlign === 'left' || !blk.content.textAlign ? 'active' : ''}" data-align="left" title="Căn lề trái">⬅ Trái</button>
+            <button type="button" class="btn-align-pill ${blk.content.textAlign === 'center' ? 'active' : ''}" data-align="center" title="Căn lề giữa">↔ Giữa</button>
+            <button type="button" class="btn-align-pill ${blk.content.textAlign === 'right' ? 'active' : ''}" data-align="right" title="Căn lề phải">➡ Phải</button>
+            <button type="button" class="btn-align-pill ${blk.content.textAlign === 'justify' ? 'active' : ''}" data-align="justify" title="Căn đều 2 bên">☰ Căn đều 2 bên</button>
           </div>
-          <div>
-            <label>Khoảng cách dòng</label>
-            <input type="text" id="prop-line-height" value="${blk.content.lineHeight || '1.6'}" placeholder="1.5, 1.8" class="prop-input" />
-          </div>
+          <select id="prop-text-align" class="prop-select" style="display:none;">
+            <option value="left" ${blk.content.textAlign === 'left' || !blk.content.textAlign ? 'selected' : ''}>Trái</option>
+            <option value="center" ${blk.content.textAlign === 'center' ? 'selected' : ''}>Giữa</option>
+            <option value="right" ${blk.content.textAlign === 'right' ? 'selected' : ''}>Phải</option>
+            <option value="justify" ${blk.content.textAlign === 'justify' ? 'selected' : ''}>Đều 2 bên</option>
+          </select>
+        </div>
+
+        <div class="prop-row">
+          <label>Khoảng cách dòng (Line Height)</label>
+          <input type="text" id="prop-line-height" value="${blk.content.lineHeight || '1.6'}" placeholder="1.5, 1.8" class="prop-input" />
         </div>
 
         <div class="prop-row">
@@ -322,6 +321,39 @@ export class BuilderPropertiesPanel {
         </div>
       </div>
 
+      ${blk.type === 'hero-video' ? `
+      <div class="prop-group">
+        <div class="prop-group-title">Cấu Hình Video Lăn Chuột (Hero Video)</div>
+        <div class="prop-row">
+          <label>Chế độ nguồn video</label>
+          <select id="prop-hero-video-mode" class="prop-select">
+            <option value="manifest" ${!blk.content.videoUrl ? 'selected' : ''}>Chuỗi WebP Frames (Tối ưu 60fps mượt nhất)</option>
+            <option value="video" ${blk.content.videoUrl ? 'selected' : ''}>Tệp Video MP4 / WebM Trực Tiếp</option>
+          </select>
+        </div>
+        <div class="prop-row" id="row-hero-manifest" style="${blk.content.videoUrl ? 'display:none;' : ''}">
+          <label>Đường dẫn Manifest JSON (Khung hình)</label>
+          <input type="text" id="prop-hero-manifest" value="${blk.content.manifestUrl || '/assets/frames/manifest.json'}" placeholder="/assets/frames/manifest.json" class="prop-input" />
+        </div>
+        <div class="prop-row" id="row-hero-videourl" style="${!blk.content.videoUrl ? 'display:none;' : ''}">
+          <label>Đường dẫn tệp Video (.mp4 / .webm)</label>
+          <input type="text" id="prop-hero-videourl-input" value="${blk.content.videoUrl || ''}" placeholder="/assets/videos/... hoặc URL video" class="prop-input" />
+        </div>
+        <div style="display:flex; gap:8px; margin-top:8px;">
+          <button type="button" class="btn-open-media-for-block" id="btn-hero-pick-video" style="flex:1;">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polygon points="23 7 16 12 23 17 23 7"/>
+              <rect x="1" y="5" width="15" height="14" rx="2" ry="2"/>
+            </svg>
+            <span>Chọn Video / Manifest từ Media</span>
+          </button>
+        </div>
+        <div style="font-size:11px; color:#38bdf8; margin-top:8px; line-height:1.4;">
+          💡 <strong>Hướng dẫn thêm video mới:</strong> Tải tệp MP4 của bạn vào Media Manager và chọn ở đây; hoặc dùng chuỗi WebP frames trích xuất sẵn để cuộn mượt từng mili-giây.
+        </div>
+      </div>
+      ` : ''}
+
       <div class="prop-group">
         <div class="prop-group-title">Kho Tài Nguyên & Nội Dung</div>
         <button class="btn-open-media-for-block" id="btn-pick-media">
@@ -360,6 +392,30 @@ export class BuilderPropertiesPanel {
         <div class="prop-row">
           <label>Chiều cao (Height)</label>
           <input type="text" id="sec-prop-height" value="${sec.layout.height || '100vh'}" placeholder="100vh, 650px..." class="prop-input" />
+        </div>
+      </div>
+
+      <div class="prop-group">
+        <div class="prop-group-title">Kích Thước & Chiều Rộng Section</div>
+        <div class="prop-row-2">
+          <div>
+            <label>Chiều rộng (Width)</label>
+            <input type="text" id="sec-prop-width" value="${sec.layout.width || '100%'}" placeholder="100%, 1440px..." class="prop-input" />
+          </div>
+          <div>
+            <label>Tối đa (Max Width)</label>
+            <input type="text" id="sec-prop-maxWidth" value="${sec.layout.maxWidth || 'none'}" placeholder="none, 1440px..." class="prop-input" />
+          </div>
+        </div>
+        <div class="section-width-presets">
+          <span style="font-size:10px; color:#94a3b8; align-self:center; margin-right:4px;">Cài đặt nhanh:</span>
+          <button type="button" class="btn-width-pill" data-width="100%" data-maxwidth="none">100% (Full)</button>
+          <button type="button" class="btn-width-pill" data-width="100%" data-maxwidth="1440px">1440px (Laptop)</button>
+          <button type="button" class="btn-width-pill" data-width="100%" data-maxwidth="1200px">1200px (Desktop)</button>
+          <button type="button" class="btn-width-pill" data-width="1000px" data-maxwidth="1000px">1000px (Gọn)</button>
+        </div>
+        <div style="font-size:11px; color:#64748b; margin-top:6px;">
+          Khi giới hạn chiều rộng, section sẽ tự động căn giữa màn hình tuyệt đẹp.
         </div>
       </div>
 
@@ -415,6 +471,48 @@ export class BuilderPropertiesPanel {
       sec.layout.height = heightInput.value;
       this.state.saveSnapshot();
       this.state.emitter.emit('builder:page-updated', this.state.page);
+    });
+
+    // Section Width & Max-Width
+    const widthInput = this.element.querySelector('#sec-prop-width') as HTMLInputElement;
+    const maxWidthInput = this.element.querySelector('#sec-prop-maxWidth') as HTMLInputElement;
+
+    const applySectionDimensions = (save = false) => {
+      sec.layout.width = (widthInput?.value || '100%').trim();
+      sec.layout.maxWidth = (maxWidthInput?.value || 'none').trim();
+      const secEls = document.querySelectorAll<HTMLElement>(`[data-section-id="${sec.id}"]`);
+      secEls.forEach((secEl) => {
+        secEl.style.width = sec.layout.width || '';
+        secEl.style.maxWidth = sec.layout.maxWidth || '';
+        if ((sec.layout.width && sec.layout.width !== '100%') || (sec.layout.maxWidth && sec.layout.maxWidth !== 'none' && sec.layout.maxWidth !== '100%')) {
+          secEl.style.marginLeft = 'auto';
+          secEl.style.marginRight = 'auto';
+        } else {
+          secEl.style.marginLeft = '';
+          secEl.style.marginRight = '';
+        }
+      });
+      if (save) {
+        this.state.saveSnapshot();
+        this.state.emitter.emit('builder:page-updated', this.state.page);
+      }
+    };
+
+    widthInput?.addEventListener('input', () => applySectionDimensions(false));
+    widthInput?.addEventListener('change', () => applySectionDimensions(true));
+    maxWidthInput?.addEventListener('input', () => applySectionDimensions(false));
+    maxWidthInput?.addEventListener('change', () => applySectionDimensions(true));
+
+    this.element.querySelectorAll('.btn-width-pill').forEach((btn) => {
+      btn.addEventListener('click', (e) => {
+        e.preventDefault();
+        const target = e.currentTarget as HTMLElement;
+        const w = target.dataset.width || '100%';
+        const mw = target.dataset.maxwidth || 'none';
+        if (widthInput) widthInput.value = w;
+        if (maxWidthInput) maxWidthInput.value = mw;
+        applySectionDimensions(true);
+      });
     });
 
     const applySecColor = (colorVal: string) => {
@@ -656,11 +754,38 @@ export class BuilderPropertiesPanel {
         this.state.saveSnapshot();
       });
 
-      // 5. Text Align
+      // 5. Text Align & Justify
       const textAlignEl = this.element.querySelector('#prop-text-align') as HTMLSelectElement;
+      const alignBtns = this.element.querySelectorAll('.btn-align-pill');
+
+      const setTextAlign = (alignVal: string, saveSnap = true) => {
+        if (textAlignEl && textAlignEl.value !== alignVal) textAlignEl.value = alignVal;
+        alignBtns.forEach((btn) => {
+          if ((btn as HTMLElement).dataset.align === alignVal) {
+            btn.classList.add('active');
+          } else {
+            btn.classList.remove('active');
+          }
+        });
+        applyLiveStyle('textAlign', 'textAlign', alignVal);
+        if (alignVal === 'justify') {
+          applyLiveStyle('textJustify', 'textJustify', 'inter-word');
+        } else {
+          applyLiveStyle('textJustify', 'textJustify', '');
+        }
+        if (saveSnap) this.state.saveSnapshot();
+      };
+
       textAlignEl?.addEventListener('change', () => {
-        applyLiveStyle('textAlign', 'textAlign', textAlignEl.value);
-        this.state.saveSnapshot();
+        setTextAlign(textAlignEl.value, true);
+      });
+
+      alignBtns.forEach((btn) => {
+        btn.addEventListener('click', (e) => {
+          e.preventDefault();
+          const align = (e.currentTarget as HTMLElement).dataset.align || 'left';
+          setTextAlign(align, true);
+        });
       });
 
       // 6. Line Height
@@ -736,6 +861,84 @@ export class BuilderPropertiesPanel {
       });
     }
 
+    // Hero Video Block bindings
+    if (blk.type === 'hero-video') {
+      const modeSelect = this.element.querySelector('#prop-hero-video-mode') as HTMLSelectElement;
+      const manifestRow = this.element.querySelector('#row-hero-manifest') as HTMLElement;
+      const videoRow = this.element.querySelector('#row-hero-videourl') as HTMLElement;
+      const manifestInput = this.element.querySelector('#prop-hero-manifest') as HTMLInputElement;
+      const videoInput = this.element.querySelector('#prop-hero-videourl-input') as HTMLInputElement;
+
+      modeSelect?.addEventListener('change', () => {
+        if (modeSelect.value === 'manifest') {
+          if (manifestRow) manifestRow.style.display = 'block';
+          if (videoRow) videoRow.style.display = 'none';
+          delete blk.content.videoUrl;
+          if (!blk.content.manifestUrl) blk.content.manifestUrl = '/assets/frames/manifest.json';
+        } else {
+          if (manifestRow) manifestRow.style.display = 'none';
+          if (videoRow) videoRow.style.display = 'block';
+          if (!blk.content.videoUrl) blk.content.videoUrl = '';
+        }
+        this.state.saveSnapshot();
+        this.state.emitter.emit('builder:hero-video-updated', {
+          blockId: blk.id,
+          videoUrl: blk.content.videoUrl,
+          manifestUrl: blk.content.manifestUrl
+        });
+        this.state.emitter.emit('builder:page-updated', this.state.page);
+      });
+
+      manifestInput?.addEventListener('change', () => {
+        blk.content.manifestUrl = manifestInput.value.trim();
+        delete blk.content.videoUrl;
+        this.state.saveSnapshot();
+        this.state.emitter.emit('builder:hero-video-updated', {
+          blockId: blk.id,
+          manifestUrl: blk.content.manifestUrl
+        });
+        this.state.emitter.emit('builder:page-updated', this.state.page);
+      });
+
+      videoInput?.addEventListener('change', () => {
+        blk.content.videoUrl = videoInput.value.trim();
+        this.state.saveSnapshot();
+        this.state.emitter.emit('builder:hero-video-updated', {
+          blockId: blk.id,
+          videoUrl: blk.content.videoUrl
+        });
+        this.state.emitter.emit('builder:page-updated', this.state.page);
+      });
+
+      this.element.querySelector('#btn-hero-pick-video')?.addEventListener('click', () => {
+        this.mediaModal.open({
+          onSelect: (asset) => {
+            if (asset.name.endsWith('.json')) {
+              blk.content.manifestUrl = asset.url;
+              delete blk.content.videoUrl;
+              if (manifestInput) manifestInput.value = asset.url;
+              if (modeSelect) modeSelect.value = 'manifest';
+              if (manifestRow) manifestRow.style.display = 'block';
+              if (videoRow) videoRow.style.display = 'none';
+            } else {
+              blk.content.videoUrl = asset.url;
+              if (videoInput) videoInput.value = asset.url;
+              if (modeSelect) modeSelect.value = 'video';
+              if (manifestRow) manifestRow.style.display = 'none';
+              if (videoRow) videoRow.style.display = 'block';
+            }
+            this.state.saveSnapshot();
+            this.state.emitter.emit('builder:hero-video-updated', {
+              blockId: blk.id,
+              videoUrl: blk.content.videoUrl,
+              manifestUrl: blk.content.manifestUrl
+            });
+            this.state.emitter.emit('builder:page-updated', this.state.page);
+          }
+        });
+      });
+    }
+
     // Open media manager to set content URL
     this.element.querySelector('#btn-pick-media')?.addEventListener('click', () => {
       this.mediaModal.open({
@@ -743,6 +946,19 @@ export class BuilderPropertiesPanel {
           if (blk.content.imageUrl !== undefined) blk.content.imageUrl = asset.url;
           if (blk.content.videoUrl !== undefined) blk.content.videoUrl = asset.url;
           if (blk.content.modelUrl !== undefined) blk.content.modelUrl = asset.url;
+          if (blk.type === 'hero-video') {
+            if (asset.name.endsWith('.json')) {
+              blk.content.manifestUrl = asset.url;
+              delete blk.content.videoUrl;
+            } else {
+              blk.content.videoUrl = asset.url;
+            }
+            this.state.emitter.emit('builder:hero-video-updated', {
+              blockId: blk.id,
+              videoUrl: blk.content.videoUrl,
+              manifestUrl: blk.content.manifestUrl
+            });
+          }
           this.state.saveSnapshot();
           this.state.emitter.emit('builder:page-updated', this.state.page);
         }

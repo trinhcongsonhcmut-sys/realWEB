@@ -108,6 +108,8 @@
   overflow: hidden;
   user-select: text !important;
   -webkit-user-select: text !important;
+  font-family: 'Be Vietnam Pro', sans-serif;
+  text-justify: inter-word;
 }
 
 .popup-drag-handle {

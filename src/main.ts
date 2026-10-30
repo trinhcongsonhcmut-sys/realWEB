@@ -41,7 +41,7 @@ document.addEventListener('DOMContentLoaded', () => {
           if (!blk.content.fontSize) blk.content.fontSize = '16px';
           if (!blk.content.fontWeight) blk.content.fontWeight = '400';
           if (!blk.content.textColor) blk.content.textColor = '#ffffff';
-          if (!blk.content.fontFamily) blk.content.fontFamily = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+          blk.content.fontFamily = "'Be Vietnam Pro', sans-serif";
         }
       });
     });

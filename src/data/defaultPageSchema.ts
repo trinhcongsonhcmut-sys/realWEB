@@ -10,7 +10,7 @@ export const DEFAULT_PAGE_SCHEMA: PageSchema = {
   updatedAt: new Date().toISOString(),
   settings: {
     primaryColor: '#38bdf8',
-    fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+    fontFamily: "'Be Vietnam Pro', sans-serif",
     enableSmoothScroll: true,
     preferReducedMotion: false,
     seoTitle: 'The Sky Horizon Landmark - Trang Giới Thiệu Bất Động Sản 3D Đỉnh Cao',
@@ -142,7 +142,7 @@ export const DEFAULT_PAGE_SCHEMA: PageSchema = {
           responsive: {},
           content: {
             text: 'Tọa lạc tại tâm điểm phồn hoa, công trình hội tụ các giá trị kiến trúc tinh tế nhất cùng hệ sinh thái tiện ích chuẩn quốc tế.\n\nKhông gian được thiết kế mở tối đa với tầm nhìn bao trọn hồ cảnh quan trung tâm, mang đến trải nghiệm sống thượng lưu khác biệt.',
-            fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+            fontFamily: "'Be Vietnam Pro', sans-serif",
             fontSize: '16px',
             fontWeight: '400',
             fontStyle: 'normal',

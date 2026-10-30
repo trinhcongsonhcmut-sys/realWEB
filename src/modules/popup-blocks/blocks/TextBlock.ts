@@ -51,7 +51,7 @@ export class TextBlock extends BaseBlock<TextBlockContent> {
     delete c.headline;
     delete c.description;
 
-    const fontFamily = c.fontFamily || '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+    const fontFamily = c.fontFamily || "'Be Vietnam Pro', sans-serif";
     const rawSize = c.fontSize || '16px';
     const fontSize = /^\d+(\.\d+)?$/.test(rawSize.trim()) ? `${rawSize.trim()}px` : rawSize.trim();
     const fontWeight = c.fontWeight || '400';
@@ -78,6 +78,7 @@ export class TextBlock extends BaseBlock<TextBlockContent> {
             font-weight: ${fontWeight};
             font-style: ${fontStyle};
             text-align: ${textAlign};
+            text-justify: inter-word;
             color: ${textColor};
             line-height: ${lineHeight};
             letter-spacing: ${letterSpacing};
@@ -120,7 +121,10 @@ export class TextBlock extends BaseBlock<TextBlockContent> {
           }
           if (data.styles?.fontWeight !== undefined) textEl.style.fontWeight = data.styles.fontWeight;
           if (data.styles?.fontStyle !== undefined) textEl.style.fontStyle = data.styles.fontStyle;
-          if (data.styles?.textAlign !== undefined) textEl.style.textAlign = data.styles.textAlign;
+          if (data.styles?.textAlign !== undefined) {
+            textEl.style.textAlign = data.styles.textAlign;
+            (textEl.style as any).textJustify = data.styles.textAlign === 'justify' ? 'inter-word' : '';
+          }
           if (data.styles?.textColor !== undefined) textEl.style.color = data.styles.textColor;
           if (data.styles?.lineHeight !== undefined) textEl.style.lineHeight = data.styles.lineHeight;
           if (data.styles?.letterSpacing !== undefined) textEl.style.letterSpacing = data.styles.letterSpacing;

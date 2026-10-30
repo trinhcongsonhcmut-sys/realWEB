@@ -89,7 +89,7 @@ export class BlockRegistry {
         icon: 'type',
         defaultContent: {
           text: 'Nhập nội dung văn bản của bạn tại đây...',
-          fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+          fontFamily: "'Be Vietnam Pro', sans-serif",
           fontSize: '18px',
           fontWeight: '400',
           fontStyle: 'normal',

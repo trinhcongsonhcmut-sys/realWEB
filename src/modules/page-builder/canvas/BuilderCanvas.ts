@@ -57,6 +57,14 @@ export class BuilderCanvas {
         );
         secWrap.dataset.sectionId = secSchema.id;
 
+        // Apply width and max-width in builder view
+        if (secSchema.layout.width) secWrap.style.width = secSchema.layout.width;
+        if (secSchema.layout.maxWidth) secWrap.style.maxWidth = secSchema.layout.maxWidth;
+        if ((secSchema.layout.width && secSchema.layout.width !== '100%') || (secSchema.layout.maxWidth && secSchema.layout.maxWidth !== 'none' && secSchema.layout.maxWidth !== '100%')) {
+          secWrap.style.marginLeft = 'auto';
+          secWrap.style.marginRight = 'auto';
+        }
+
         const controlBar = DomUtils.createElement('div', 'builder-section-control-bar');
         const currentSecHex = this.extractHexColor(secSchema.layout.background);
         controlBar.innerHTML = `

@@ -6,7 +6,8 @@ import { ScrollMotionEngine } from '../../../motion/ScrollMotionEngine';
 import { DomUtils } from '../../shared/utils/domUtils';
 
 export interface HeroVideoContent {
-  manifestUrl: string;
+  manifestUrl?: string;
+  videoUrl?: string;
   totalFrames?: number;
   fps?: number;
   title?: string;
@@ -48,11 +49,17 @@ export class HeroVideoBlock extends BaseBlock<HeroVideoContent> {
     // Initialize engines
     setTimeout(async () => {
       this.videoEngine = new VideoScrollerEngine(canvasContainer, this.emitter);
-      const manifestUrl = this.schema.content?.manifestUrl || '/assets/frames/manifest.json';
+      const content = this.schema.content || ({} as HeroVideoContent);
+
       try {
-        await this.videoEngine.loadFrameSequence(manifestUrl);
+        if (content.videoUrl) {
+          await this.videoEngine.loadVideoUrl(content.videoUrl, content.title || 'video.mp4');
+        } else {
+          const manifestUrl = content.manifestUrl || '/assets/frames/manifest.json';
+          await this.videoEngine.loadFrameSequence(manifestUrl);
+        }
       } catch (err) {
-        console.warn('Could not load frame sequence for HeroVideoBlock:', err);
+        console.warn('Could not load video media for HeroVideoBlock:', err);
       }
 
       this.motionEngine = new ScrollMotionEngine(this.emitter);
@@ -64,6 +71,21 @@ export class HeroVideoBlock extends BaseBlock<HeroVideoContent> {
           hint.style.pointerEvents = 'none';
         } else {
           hint.style.opacity = '1';
+        }
+      });
+
+      // Listen for runtime video updates from properties panel
+      this.emitter.on('builder:hero-video-updated', async (data: { blockId: string; videoUrl?: string; manifestUrl?: string }) => {
+        if (data && data.blockId === this.schema.id && this.videoEngine) {
+          try {
+            if (data.videoUrl) {
+              await this.videoEngine.loadVideoUrl(data.videoUrl);
+            } else if (data.manifestUrl) {
+              await this.videoEngine.loadFrameSequence(data.manifestUrl);
+            }
+          } catch (e) {
+            console.error('Error switching hero video:', e);
+          }
         }
       });
     }, 50);
