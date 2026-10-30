@@ -164,7 +164,9 @@ export class ScrollMotionEngine {
   }
 
   /**
-   * Cross-platform Wheel Event Handler with Popups Section Handover
+   * Cross-platform Wheel Event Handler with Full Two-Way Section Handover
+   * When video reaches the end -> smoothly transitions down to subsequent sections.
+   * When video reaches the start (0%) -> smoothly transitions up to previous sections or top.
    */
   private onWheel(e: WheelEvent): void {
     if (!this.isEnabled) return;
@@ -177,29 +179,52 @@ export class ScrollMotionEngine {
       rawDelta = e.deltaX;
     }
 
-    const scrollY = window.scrollY || document.documentElement.scrollTop || 0;
+    const canvasArea = document.querySelector('.builder-canvas-area') as HTMLElement | null;
+    const currentScrollTop = canvasArea ? canvasArea.scrollTop : (window.scrollY || document.documentElement.scrollTop || 0);
 
-    // A. If user has scrolled down into Popups section:
-    if (scrollY > 15) {
-      // If user is at top of popups and scrolls UP, let it scroll back to hero video
-      return; // Do NOT preventDefault! Let page scroll naturally through popup cards
+    const isAtLastStage = this.targetStageIndex >= this.stages.length - 1 || this.currentProgress >= 0.98;
+    const isAtFirstStage = this.targetStageIndex <= 0 && this.currentProgress <= 0.02;
+
+    // A. If already scrolled down past the hero video (scrollTop > 50):
+    if (currentScrollTop > 50) {
+      // Allow natural page scrolling through popup cards and lower sections
+      return;
     }
 
-    // B. User is in Hero Video Section:
-    const isAtLastStage = this.targetStageIndex === this.stages.length - 1;
-    const isAtFirstStage = this.targetStageIndex === 0;
+    // B. At the END of video (Cấp 15 / 100%) and scrolling DOWN:
+    if (isAtLastStage && rawDelta > 0) {
+      this.accumulatedDeltaY = 0;
+      this.isAnimatingStage = false;
+      this.emitter.emit('scroll:completed');
+      this.emitter.emit('motion:video-completed');
 
-    // If at the last stage and scrolling down, trigger handover to popups
-    if (isAtLastStage && rawDelta > 0 && !this.isAnimatingStage) {
-      this.accumulatedDeltaY += rawDelta;
-      if (this.accumulatedDeltaY >= this.gestureThreshold) {
-        this.accumulatedDeltaY = 0;
-        this.emitter.emit('scroll:completed');
+      // Handover: smoothly scroll down to Section 2 (next section)
+      const allSections = document.querySelectorAll('.page-section');
+      if (allSections.length > 1) {
+        const nextSec = allSections[1] as HTMLElement;
+        nextSec?.scrollIntoView({ behavior: 'smooth', block: 'start' });
       }
-      return; // Let browser scroll down to popups
+      return; // Do NOT preventDefault! Let page scroll down naturally
     }
 
-    // In all other cases within video, prevent page scroll and scrub video
+    // C. At the START of video (Cấp 1 / 0%) and scrolling UP:
+    if (isAtFirstStage && rawDelta < 0) {
+      this.accumulatedDeltaY = 0;
+      this.isAnimatingStage = false;
+      this.emitter.emit('motion:video-rewound');
+
+      // Handover: allow scrolling up naturally
+      if (currentScrollTop > 0) {
+        if (canvasArea) {
+          canvasArea.scrollTo({ top: 0, behavior: 'smooth' });
+        } else {
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+      }
+      return; // Do NOT preventDefault! Let page scroll up naturally
+    }
+
+    // D. Scrubbing within video stages: prevent normal page scroll
     e.preventDefault();
 
     // DISCRETE STAGES MODE
@@ -236,10 +261,29 @@ export class ScrollMotionEngine {
 
   private onTouchMove(e: TouchEvent): void {
     if (!this.isEnabled || !this.isTouching || e.touches.length === 0) return;
-    if (e.cancelable) e.preventDefault();
 
     const currentY = e.touches[0].clientY;
     const deltaY = this.lastTouchY - currentY;
+
+    const isAtLastStage = this.targetStageIndex >= this.stages.length - 1 || this.currentProgress >= 0.98;
+    const isAtFirstStage = this.targetStageIndex <= 0 && this.currentProgress <= 0.02;
+
+    if (isAtLastStage && deltaY > 0) {
+      this.emitter.emit('scroll:completed');
+      this.emitter.emit('motion:video-completed');
+      const allSections = document.querySelectorAll('.page-section');
+      if (allSections.length > 1) {
+        allSections[1]?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+      return;
+    }
+
+    if (isAtFirstStage && deltaY < 0) {
+      this.emitter.emit('motion:video-rewound');
+      return;
+    }
+
+    if (e.cancelable) e.preventDefault();
 
     if (this.motionMode === 'discrete_stages') {
       if (Math.abs(deltaY) > 24) {

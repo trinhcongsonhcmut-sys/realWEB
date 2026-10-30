@@ -2,6 +2,7 @@ import { BuilderState } from '../state/BuilderState';
 import { MediaLibraryModal } from '../../media-manager/components/MediaLibraryModal';
 import { MediaManagerService } from '../../media-manager/core/MediaManagerService';
 import { DomUtils } from '../../shared/utils/domUtils';
+import { SectionSchema } from '../../shared/schemas/page.types';
 
 export class BuilderPropertiesPanel {
   public state: BuilderState;
@@ -28,7 +29,7 @@ export class BuilderPropertiesPanel {
         </div>
       </div>
       <div class="props-content" id="props-fields">
-        <div class="props-empty-state">Chọn một pop-up trên màn hình để cấu hình thuộc tính</div>
+        <div class="props-empty-state">Chọn một Section hoặc Pop-up trên màn hình để cấu hình thuộc tính</div>
       </div>
     `;
     return aside;
@@ -40,17 +41,49 @@ export class BuilderPropertiesPanel {
 
     const blk = this.state.getActiveBlock();
     if (!blk) {
-      fields.innerHTML = `<div class="props-empty-state">Chọn một pop-up trên màn hình để cấu hình thuộc tính</div>`;
+      const activeSec = this.state.getActiveSection();
+      if (activeSec) {
+        this.renderSectionProperties(activeSec, fields as HTMLElement);
+        return;
+      }
+      fields.innerHTML = `<div class="props-empty-state">Chọn một Section hoặc Pop-up trên màn hình để cấu hình thuộc tính</div>`;
       return;
     }
 
     const l = blk.layout;
     const s = blk.styling;
     const a = blk.animation;
+    const activeSec = this.state.getActiveSection();
+    const currentSecHex = this.extractHex(activeSec?.layout.background);
 
     fields.innerHTML = `
+      ${activeSec ? `
       <div class="prop-group">
-        <div class="prop-group-title">Thông Tin Cơ Bản</div>
+        <div class="prop-group-title">Màu Nền Section (${activeSec.title})</div>
+        <div class="rainbow-picker-container">
+          <div class="rainbow-swatch-wrap" title="Bấm vào đây để mở bảng màu cầu vồng">
+            <input type="color" id="sec-quick-rainbow" value="${currentSecHex}" class="rainbow-native-input" />
+            <span class="rainbow-swatch-badge">Bảng màu cầu vồng Section 🎨</span>
+          </div>
+          <div class="prop-row">
+            <input type="text" id="sec-quick-bg-text" value="${activeSec.layout.background || '#0a0d14'}" placeholder="#0a0d14 hoặc gradient" class="prop-input" />
+          </div>
+          <div class="rainbow-presets-grid">
+            <button class="preset-color-dot" data-color="#000000" style="background:#000000;" title="Pure Black"></button>
+            <button class="preset-color-dot" data-color="#0a0d14" style="background:#0a0d14;" title="Midnight Dark"></button>
+            <button class="preset-color-dot" data-color="#0f172a" style="background:#0f172a;" title="Slate Blue"></button>
+            <button class="preset-color-dot" data-color="#111827" style="background:#111827;" title="Charcoal"></button>
+            <button class="preset-color-dot" data-color="#042f2e" style="background:#042f2e;" title="Dark Emerald"></button>
+            <button class="preset-color-dot" data-color="#1e1b4b" style="background:#1e1b4b;" title="Deep Violet"></button>
+            <button class="preset-color-dot" data-color="linear-gradient(180deg, #0a0d14 0%, #111520 100%)" style="background:linear-gradient(180deg, #0a0d14 0%, #111520 100%);" title="Gradient Dark Dual"></button>
+            <button class="preset-color-dot" data-color="linear-gradient(180deg, #0a0d14 0%, #0c2135 100%)" style="background:linear-gradient(180deg, #0a0d14 0%, #0c2135 100%);" title="Gradient Cyan Glow"></button>
+          </div>
+        </div>
+      </div>
+      ` : ''}
+
+      <div class="prop-group">
+        <div class="prop-group-title">Thông Tin Pop-up</div>
         <div class="prop-row">
           <label>Tiêu đề</label>
           <input type="text" id="prop-title" value="${blk.title}" class="prop-input" />
@@ -124,7 +157,7 @@ export class BuilderPropertiesPanel {
           </label>
         </div>
         <div class="prop-row">
-          <label>Background</label>
+          <label>Background Pop-up</label>
           <input type="text" id="prop-background" value="${s.background || 'rgba(18, 21, 28, 0.88)'}" class="prop-input" />
         </div>
         <div class="prop-row-2">
@@ -145,31 +178,6 @@ export class BuilderPropertiesPanel {
           <div>
             <label>Đệm (Padding)</label>
             <input type="text" id="prop-padding" value="${s.padding || '18px'}" class="prop-input" />
-          </div>
-        </div>
-      </div>
-
-      <div class="prop-group">
-        <div class="prop-group-title">Hiệu Ứng Chuyển Động (Animation)</div>
-        <div class="prop-row">
-          <label>Entrance</label>
-          <select id="prop-entrance" class="prop-select">
-            <option value="fade-up" ${a.entrance === 'fade-up' ? 'selected' : ''}>Fade Up</option>
-            <option value="fade-in" ${a.entrance === 'fade-in' ? 'selected' : ''}>Fade In</option>
-            <option value="scale-up" ${a.entrance === 'scale-up' ? 'selected' : ''}>Scale Up</option>
-            <option value="slide-left" ${a.entrance === 'slide-left' ? 'selected' : ''}>Slide Left</option>
-            <option value="slide-right" ${a.entrance === 'slide-right' ? 'selected' : ''}>Slide Right</option>
-            <option value="none" ${a.entrance === 'none' ? 'selected' : ''}>None</option>
-          </select>
-        </div>
-        <div class="prop-row-2">
-          <div>
-            <label>Thời lượng (ms)</label>
-            <input type="number" id="prop-animDuration" value="${a.duration || 400}" class="prop-input" />
-          </div>
-          <div>
-            <label>Độ trễ (ms)</label>
-            <input type="number" id="prop-animDelay" value="${a.delay || 0}" class="prop-input" />
           </div>
         </div>
       </div>
@@ -196,7 +204,7 @@ export class BuilderPropertiesPanel {
         </div>
         <div class="prop-row-2">
           <div>
-            <label>Cỡ chữ (Size)</label>
+            <label>Cỡ chữ (Size: e.g. 18px, 24px)</label>
             <input type="text" id="prop-font-size" value="${blk.content.fontSize || '16px'}" placeholder="16px, 24px" class="prop-input" />
           </div>
           <div>
@@ -228,9 +236,9 @@ export class BuilderPropertiesPanel {
         </div>
         <div class="prop-row-2">
           <div>
-            <label>Màu chữ</label>
+            <label>Màu chữ (Bảng màu full)</label>
             <div style="display:flex; gap:6px; align-items:center;">
-              <input type="color" id="prop-text-color-picker" value="${blk.content.textColor && blk.content.textColor.startsWith('#') ? blk.content.textColor : '#ffffff'}" style="width:28px; height:28px; padding:0; border:none; border-radius:4px; cursor:pointer; background:none;" />
+              <input type="color" id="prop-text-color-picker" value="${this.extractHex(blk.content.textColor)}" style="width:32px; height:32px; padding:0; border:none; border-radius:4px; cursor:pointer; background:none;" />
               <input type="text" id="prop-text-color" value="${blk.content.textColor || '#ffffff'}" class="prop-input" style="flex:1;" />
             </div>
           </div>
@@ -263,6 +271,31 @@ export class BuilderPropertiesPanel {
       ` : ''}
 
       <div class="prop-group">
+        <div class="prop-group-title">Hiệu Ứng Chuyển Động (Animation)</div>
+        <div class="prop-row">
+          <label>Entrance</label>
+          <select id="prop-entrance" class="prop-select">
+            <option value="fade-up" ${a.entrance === 'fade-up' ? 'selected' : ''}>Fade Up</option>
+            <option value="fade-in" ${a.entrance === 'fade-in' ? 'selected' : ''}>Fade In</option>
+            <option value="scale-up" ${a.entrance === 'scale-up' ? 'selected' : ''}>Scale Up</option>
+            <option value="slide-left" ${a.entrance === 'slide-left' ? 'selected' : ''}>Slide Left</option>
+            <option value="slide-right" ${a.entrance === 'slide-right' ? 'selected' : ''}>Slide Right</option>
+            <option value="none" ${a.entrance === 'none' ? 'selected' : ''}>None</option>
+          </select>
+        </div>
+        <div class="prop-row-2">
+          <div>
+            <label>Thời lượng (ms)</label>
+            <input type="number" id="prop-animDuration" value="${a.duration || 400}" class="prop-input" />
+          </div>
+          <div>
+            <label>Độ trễ (ms)</label>
+            <input type="number" id="prop-animDelay" value="${a.delay || 0}" class="prop-input" />
+          </div>
+        </div>
+      </div>
+
+      <div class="prop-group">
         <div class="prop-group-title">Kho Tài Nguyên & Nội Dung</div>
         <button class="btn-open-media-for-block" id="btn-pick-media">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -275,10 +308,136 @@ export class BuilderPropertiesPanel {
       </div>
     `;
 
-    this.bindFieldInputs(blk);
+    this.bindFieldInputs(blk, activeSec);
   }
 
-  private bindFieldInputs(blk: any): void {
+  private renderSectionProperties(sec: SectionSchema, container: HTMLElement): void {
+    const currentHex = this.extractHex(sec.layout.background);
+
+    container.innerHTML = `
+      <div class="prop-group">
+        <div class="prop-group-title">Cấu Hình Section ${sec.order}</div>
+        <div class="prop-row">
+          <label>Tên Section</label>
+          <input type="text" id="sec-prop-title" value="${sec.title}" class="prop-input" />
+        </div>
+        <div class="prop-row">
+          <label>Loại Section</label>
+          <select id="sec-prop-type" class="prop-select">
+            <option value="full-screen" ${sec.type === 'full-screen' ? 'selected' : ''}>Full Screen (100vh)</option>
+            <option value="half-screen" ${sec.type === 'half-screen' ? 'selected' : ''}>Half Screen (50vh)</option>
+            <option value="custom" ${sec.type === 'custom' ? 'selected' : ''}>Tùy chỉnh độ cao</option>
+            <option value="sticky" ${sec.type === 'sticky' ? 'selected' : ''}>Sticky (Dính cố định)</option>
+          </select>
+        </div>
+        <div class="prop-row">
+          <label>Chiều cao (Height)</label>
+          <input type="text" id="sec-prop-height" value="${sec.layout.height || '100vh'}" placeholder="100vh, 650px..." class="prop-input" />
+        </div>
+      </div>
+
+      <div class="prop-group">
+        <div class="prop-group-title">Màu Nền Section (Bảng Màu Cầu Vồng Full)</div>
+        <div class="rainbow-picker-container">
+          <div class="rainbow-swatch-wrap" title="Bấm vào đây để chọn màu cầu vồng">
+            <input type="color" id="sec-rainbow-picker" value="${currentHex}" class="rainbow-native-input" />
+            <span class="rainbow-swatch-badge">Bấm để chọn màu cầu vồng full 🎨</span>
+          </div>
+          <div class="prop-row">
+            <label>Mã màu / CSS Gradient</label>
+            <input type="text" id="sec-bg-input" value="${sec.layout.background || '#0a0d14'}" placeholder="#0a0d14 hoặc gradient" class="prop-input" />
+          </div>
+        </div>
+
+        <div style="font-size:11px; color:#94a3b8; margin-top:8px;">Bảng màu gợi ý nhanh:</div>
+        <div class="rainbow-presets-grid">
+          <button class="preset-color-dot" data-color="#000000" style="background:#000000;" title="Pure Black"></button>
+          <button class="preset-color-dot" data-color="#0a0d14" style="background:#0a0d14;" title="Midnight Dark"></button>
+          <button class="preset-color-dot" data-color="#0f172a" style="background:#0f172a;" title="Slate Blue"></button>
+          <button class="preset-color-dot" data-color="#111827" style="background:#111827;" title="Charcoal"></button>
+          <button class="preset-color-dot" data-color="#042f2e" style="background:#042f2e;" title="Dark Emerald"></button>
+          <button class="preset-color-dot" data-color="#1e1b4b" style="background:#1e1b4b;" title="Deep Violet"></button>
+          <button class="preset-color-dot" data-color="linear-gradient(180deg, #0a0d14 0%, #111520 100%)" style="background:linear-gradient(180deg, #0a0d14 0%, #111520 100%);" title="Gradient Dark Dual"></button>
+          <button class="preset-color-dot" data-color="linear-gradient(180deg, #0a0d14 0%, #0c2135 100%)" style="background:linear-gradient(180deg, #0a0d14 0%, #0c2135 100%);" title="Gradient Cyan Glow"></button>
+        </div>
+      </div>
+    `;
+
+    this.bindSectionInputs(sec);
+  }
+
+  private bindSectionInputs(sec: SectionSchema): void {
+    const titleInput = this.element.querySelector('#sec-prop-title') as HTMLInputElement;
+    titleInput?.addEventListener('change', () => {
+      sec.title = titleInput.value;
+      this.state.saveSnapshot();
+      this.state.emitter.emit('builder:page-updated', this.state.page);
+    });
+
+    const typeSelect = this.element.querySelector('#sec-prop-type') as HTMLSelectElement;
+    typeSelect?.addEventListener('change', () => {
+      sec.type = typeSelect.value as any;
+      if (sec.type === 'full-screen') sec.layout.height = '100vh';
+      else if (sec.type === 'half-screen') sec.layout.height = '50vh';
+      this.state.saveSnapshot();
+      this.state.emitter.emit('builder:page-updated', this.state.page);
+    });
+
+    const heightInput = this.element.querySelector('#sec-prop-height') as HTMLInputElement;
+    heightInput?.addEventListener('change', () => {
+      sec.layout.height = heightInput.value;
+      this.state.saveSnapshot();
+      this.state.emitter.emit('builder:page-updated', this.state.page);
+    });
+
+    const applySecColor = (colorVal: string) => {
+      sec.layout.background = colorVal;
+      const secEl = document.querySelector(`[data-section-id="${sec.id}"]`) as HTMLElement;
+      if (secEl) {
+        secEl.style.background = colorVal;
+        const innerSec = secEl.querySelector('.page-section') as HTMLElement;
+        if (innerSec) innerSec.style.background = colorVal;
+      }
+      this.state.emitter.emit('builder:section-bg-changed', { sectionId: sec.id, background: colorVal });
+    };
+
+    const rainbowPicker = this.element.querySelector('#sec-rainbow-picker') as HTMLInputElement;
+    const bgInput = this.element.querySelector('#sec-bg-input') as HTMLInputElement;
+
+    rainbowPicker?.addEventListener('input', () => {
+      const col = rainbowPicker.value;
+      if (bgInput) bgInput.value = col;
+      applySecColor(col);
+    });
+    rainbowPicker?.addEventListener('change', () => {
+      this.state.saveSnapshot();
+    });
+
+    bgInput?.addEventListener('input', () => {
+      const col = bgInput.value;
+      applySecColor(col);
+      if (rainbowPicker && col.startsWith('#') && (col.length === 7 || col.length === 4)) {
+        rainbowPicker.value = col;
+      }
+    });
+    bgInput?.addEventListener('change', () => {
+      this.state.saveSnapshot();
+    });
+
+    this.element.querySelectorAll('.preset-color-dot').forEach((btn) => {
+      btn.addEventListener('click', (e) => {
+        const dotColor = (e.currentTarget as HTMLElement).dataset.color || '#0a0d14';
+        if (bgInput) bgInput.value = dotColor;
+        if (rainbowPicker && dotColor.startsWith('#') && (dotColor.length === 7 || dotColor.length === 4)) {
+          rainbowPicker.value = dotColor;
+        }
+        applySecColor(dotColor);
+        this.state.saveSnapshot();
+      });
+    });
+  }
+
+  private bindFieldInputs(blk: any, activeSec?: SectionSchema | null): void {
     const bindVal = (id: string, setter: (val: string) => void) => {
       const el = this.element.querySelector(`#${id}`) as HTMLInputElement;
       el?.addEventListener('change', () => {
@@ -324,68 +483,184 @@ export class BuilderPropertiesPanel {
     bindCheck('prop-hideHeader', (v) => (blk.styling.hideHeader = v));
     bindCheck('prop-transparentBackground', (v) => (blk.styling.transparentBackground = v));
 
-    // Typography bindings for Text Block
+    // Section quick color picker when block is selected
+    if (activeSec) {
+      const quickSecPicker = this.element.querySelector('#sec-quick-rainbow') as HTMLInputElement;
+      const quickSecText = this.element.querySelector('#sec-quick-bg-text') as HTMLInputElement;
+
+      const applyQuickSec = (col: string) => {
+        activeSec.layout.background = col;
+        const secEl = document.querySelector(`[data-section-id="${activeSec.id}"]`) as HTMLElement;
+        if (secEl) {
+          secEl.style.background = col;
+          const innerSec = secEl.querySelector('.page-section') as HTMLElement;
+          if (innerSec) innerSec.style.background = col;
+        }
+        this.state.emitter.emit('builder:section-bg-changed', { sectionId: activeSec.id, background: col });
+      };
+
+      quickSecPicker?.addEventListener('input', () => {
+        const col = quickSecPicker.value;
+        if (quickSecText) quickSecText.value = col;
+        applyQuickSec(col);
+      });
+      quickSecPicker?.addEventListener('change', () => {
+        this.state.saveSnapshot();
+      });
+
+      quickSecText?.addEventListener('input', () => {
+        const col = quickSecText.value;
+        applyQuickSec(col);
+        if (quickSecPicker && col.startsWith('#') && (col.length === 7 || col.length === 4)) {
+          quickSecPicker.value = col;
+        }
+      });
+      quickSecText?.addEventListener('change', () => {
+        this.state.saveSnapshot();
+      });
+
+      this.element.querySelectorAll('.preset-color-dot').forEach((btn) => {
+        btn.addEventListener('click', (e) => {
+          const dotColor = (e.currentTarget as HTMLElement).dataset.color || '#0a0d14';
+          if (quickSecText) quickSecText.value = dotColor;
+          if (quickSecPicker && dotColor.startsWith('#') && (dotColor.length === 7 || dotColor.length === 4)) {
+            quickSecPicker.value = dotColor;
+          }
+          applyQuickSec(dotColor);
+          this.state.saveSnapshot();
+        });
+      });
+    }
+
+    // Direct Typography live bindings for Text Block
     if (blk.type === 'text') {
+      const getTargetTextEl = () => {
+        const blockEl = document.querySelector(`[data-block-id="${blk.id}"]`);
+        return blockEl?.querySelector('.pure-text-content') as HTMLElement | null;
+      };
+
+      const normalizeFontSize = (v: string): string => {
+        const trimmed = (v || '').trim();
+        if (!trimmed) return '16px';
+        if (/^\d+(\.\d+)?$/.test(trimmed)) return `${trimmed}px`;
+        return trimmed;
+      };
+
+      // 1. Text Content
       const textInput = this.element.querySelector('#prop-text-content') as HTMLTextAreaElement;
       textInput?.addEventListener('input', () => {
         blk.content.text = textInput.value;
+        const textEl = getTargetTextEl();
+        if (textEl && textEl.innerText !== textInput.value) {
+          textEl.innerText = textInput.value;
+        }
         this.state.emitter.emit('builder:text-content-changed', { blockId: blk.id, text: textInput.value, source: 'panel' });
       });
       textInput?.addEventListener('change', () => {
         this.state.saveSnapshot();
-        this.state.emitter.emit('builder:page-updated', this.state.page);
       });
 
-      bindVal('prop-font-family', (v) => {
-        blk.content.fontFamily = v;
-        this.state.emitter.emit('builder:page-updated', this.state.page);
-      });
-      bindVal('prop-font-size', (v) => {
-        blk.content.fontSize = v;
-        this.state.emitter.emit('builder:page-updated', this.state.page);
-      });
-      bindVal('prop-font-weight', (v) => {
-        blk.content.fontWeight = v;
-        this.state.emitter.emit('builder:page-updated', this.state.page);
-      });
-      bindVal('prop-text-align', (v) => {
-        blk.content.textAlign = v as any;
-        this.state.emitter.emit('builder:page-updated', this.state.page);
-      });
-      bindVal('prop-line-height', (v) => {
-        blk.content.lineHeight = v;
-        this.state.emitter.emit('builder:page-updated', this.state.page);
-      });
-      bindVal('prop-text-color', (v) => {
-        blk.content.textColor = v;
-        const picker = this.element.querySelector('#prop-text-color-picker') as HTMLInputElement;
-        if (picker && v.startsWith('#')) picker.value = v;
-        this.state.emitter.emit('builder:page-updated', this.state.page);
+      // 2. Font Family
+      const fontFamEl = this.element.querySelector('#prop-font-family') as HTMLSelectElement;
+      fontFamEl?.addEventListener('change', () => {
+        blk.content.fontFamily = fontFamEl.value;
+        const textEl = getTargetTextEl();
+        if (textEl) textEl.style.fontFamily = fontFamEl.value;
+        this.state.saveSnapshot();
       });
 
+      // 3. Font Size (Input & Live Typing with auto-px)
+      const fontSizeEl = this.element.querySelector('#prop-font-size') as HTMLInputElement;
+      fontSizeEl?.addEventListener('input', () => {
+        const normalized = normalizeFontSize(fontSizeEl.value);
+        blk.content.fontSize = normalized;
+        const textEl = getTargetTextEl();
+        if (textEl) textEl.style.fontSize = normalized;
+      });
+      fontSizeEl?.addEventListener('change', () => {
+        const normalized = normalizeFontSize(fontSizeEl.value);
+        fontSizeEl.value = normalized;
+        blk.content.fontSize = normalized;
+        const textEl = getTargetTextEl();
+        if (textEl) textEl.style.fontSize = normalized;
+        this.state.saveSnapshot();
+      });
+
+      // 4. Font Weight
+      const fontWeightEl = this.element.querySelector('#prop-font-weight') as HTMLSelectElement;
+      fontWeightEl?.addEventListener('change', () => {
+        blk.content.fontWeight = fontWeightEl.value;
+        const textEl = getTargetTextEl();
+        if (textEl) textEl.style.fontWeight = fontWeightEl.value;
+        this.state.saveSnapshot();
+      });
+
+      // 5. Text Align
+      const textAlignEl = this.element.querySelector('#prop-text-align') as HTMLSelectElement;
+      textAlignEl?.addEventListener('change', () => {
+        blk.content.textAlign = textAlignEl.value as any;
+        const textEl = getTargetTextEl();
+        if (textEl) textEl.style.textAlign = textAlignEl.value;
+        this.state.saveSnapshot();
+      });
+
+      // 6. Line Height
+      const lineHgtEl = this.element.querySelector('#prop-line-height') as HTMLInputElement;
+      lineHgtEl?.addEventListener('input', () => {
+        blk.content.lineHeight = lineHgtEl.value;
+        const textEl = getTargetTextEl();
+        if (textEl) textEl.style.lineHeight = lineHgtEl.value;
+      });
+      lineHgtEl?.addEventListener('change', () => {
+        this.state.saveSnapshot();
+      });
+
+      // 7. Text Color (Rainbow Native Picker + Text Input)
       const colorPicker = this.element.querySelector('#prop-text-color-picker') as HTMLInputElement;
+      const colorInput = this.element.querySelector('#prop-text-color') as HTMLInputElement;
+
       colorPicker?.addEventListener('input', () => {
-        blk.content.textColor = colorPicker.value;
-        const colorInput = this.element.querySelector('#prop-text-color') as HTMLInputElement;
-        if (colorInput) colorInput.value = colorPicker.value;
-        this.state.emitter.emit('builder:page-updated', this.state.page);
+        const newCol = colorPicker.value;
+        blk.content.textColor = newCol;
+        if (colorInput) colorInput.value = newCol;
+        const textEl = getTargetTextEl();
+        if (textEl) textEl.style.color = newCol;
       });
       colorPicker?.addEventListener('change', () => {
         this.state.saveSnapshot();
       });
 
-      const italicEl = this.element.querySelector('#prop-font-italic') as HTMLInputElement;
-      italicEl?.addEventListener('change', () => {
-        blk.content.fontStyle = italicEl.checked ? 'italic' : 'normal';
+      colorInput?.addEventListener('input', () => {
+        const newCol = colorInput.value;
+        blk.content.textColor = newCol;
+        if (colorPicker && newCol.startsWith('#') && (newCol.length === 7 || newCol.length === 4)) {
+          colorPicker.value = newCol;
+        }
+        const textEl = getTargetTextEl();
+        if (textEl) textEl.style.color = newCol;
+      });
+      colorInput?.addEventListener('change', () => {
         this.state.saveSnapshot();
-        this.state.emitter.emit('builder:page-updated', this.state.page);
       });
 
+      // 8. Italic Style
+      const italicEl = this.element.querySelector('#prop-font-italic') as HTMLInputElement;
+      italicEl?.addEventListener('change', () => {
+        const styleVal = italicEl.checked ? 'italic' : 'normal';
+        blk.content.fontStyle = styleVal;
+        const textEl = getTargetTextEl();
+        if (textEl) textEl.style.fontStyle = styleVal;
+        this.state.saveSnapshot();
+      });
+
+      // 9. Uppercase
       const upperEl = this.element.querySelector('#prop-text-uppercase') as HTMLInputElement;
       upperEl?.addEventListener('change', () => {
-        blk.content.textTransform = upperEl.checked ? 'uppercase' : 'none';
+        const transformVal = upperEl.checked ? 'uppercase' : 'none';
+        blk.content.textTransform = transformVal;
+        const textEl = getTargetTextEl();
+        if (textEl) textEl.style.textTransform = transformVal;
         this.state.saveSnapshot();
-        this.state.emitter.emit('builder:page-updated', this.state.page);
       });
     }
 
@@ -393,7 +668,10 @@ export class BuilderPropertiesPanel {
     if (blk.type === 'image') {
       bindVal('prop-object-fit', (v) => {
         blk.content.objectFit = v as any;
-        this.state.emitter.emit('builder:page-updated', this.state.page);
+        const blockEl = document.querySelector(`[data-block-id="${blk.id}"]`);
+        const imgEl = blockEl?.querySelector('.popup-img') as HTMLElement;
+        if (imgEl) imgEl.style.objectFit = v;
+        this.state.saveSnapshot();
       });
     }
 
@@ -409,6 +687,14 @@ export class BuilderPropertiesPanel {
         }
       });
     });
+  }
+
+  private extractHex(colorStr?: string): string {
+    if (!colorStr) return '#0a0d14';
+    if (colorStr.startsWith('#') && (colorStr.length === 7 || colorStr.length === 4)) return colorStr;
+    const hexMatch = colorStr.match(/#[0-9a-fA-F]{6}/);
+    if (hexMatch) return hexMatch[0];
+    return '#0a0d14';
   }
 
   private bindEvents(): void {
@@ -439,6 +725,20 @@ export class BuilderPropertiesPanel {
         }
       }
     });
+
+    this.state.emitter.on('builder:section-bg-changed', (data: { sectionId: string; background: string }) => {
+      if (this.state.activeSectionId === data.sectionId) {
+        const quickText = this.element.querySelector('#sec-quick-bg-text') as HTMLInputElement;
+        const quickPicker = this.element.querySelector('#sec-quick-rainbow') as HTMLInputElement;
+        const secBgInput = this.element.querySelector('#sec-bg-input') as HTMLInputElement;
+        const secRainbowPicker = this.element.querySelector('#sec-rainbow-picker') as HTMLInputElement;
+
+        if (quickText) quickText.value = data.background;
+        if (secBgInput) secBgInput.value = data.background;
+        const hex = this.extractHex(data.background);
+        if (quickPicker) quickPicker.value = hex;
+        if (secRainbowPicker) secRainbowPicker.value = hex;
+      }
+    });
   }
 }
-

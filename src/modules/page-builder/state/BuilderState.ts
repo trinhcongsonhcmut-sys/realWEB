@@ -67,6 +67,20 @@ export class BuilderState {
     });
   }
 
+  public selectSection(sectionId: string): void {
+    this.activeSectionId = sectionId;
+    this.activeBlockId = null;
+    this.emitter.emit('builder:selection-changed', {
+      sectionId: this.activeSectionId,
+      blockId: null
+    });
+  }
+
+  public getActiveSection(): SectionSchema | null {
+    if (!this.activeSectionId) return null;
+    return this.page.sections.find((s) => s.id === this.activeSectionId) || null;
+  }
+
   public getActiveBlock(): PopupBlockSchema | null {
     if (!this.activeBlockId) return null;
     for (const sec of this.page.sections) {

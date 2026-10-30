@@ -68,9 +68,7 @@ export class BuilderSidebar {
       // Header click selects section and smoothly scrolls canvas
       secItem.querySelector('.tree-sec-header')?.addEventListener('click', (e) => {
         if ((e.target as HTMLElement).closest('.btn-tool-del-sec')) return;
-        this.state.activeSectionId = sec.id;
-        const firstBlock = sec.blocks[0]?.id || null;
-        this.state.selectBlock(firstBlock, sec.id);
+        this.state.selectSection(sec.id);
         this.updateTree();
       });
 

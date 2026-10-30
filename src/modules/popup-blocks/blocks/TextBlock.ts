@@ -52,7 +52,8 @@ export class TextBlock extends BaseBlock<TextBlockContent> {
     delete c.description;
 
     const fontFamily = c.fontFamily || '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
-    const fontSize = c.fontSize || '16px';
+    const rawSize = c.fontSize || '16px';
+    const fontSize = /^\d+(\.\d+)?$/.test(rawSize.trim()) ? `${rawSize.trim()}px` : rawSize.trim();
     const fontWeight = c.fontWeight || '400';
     const fontStyle = c.fontStyle || 'normal';
     const textAlign = c.textAlign || 'left';

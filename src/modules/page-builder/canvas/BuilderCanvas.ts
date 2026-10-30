@@ -49,20 +49,39 @@ export class BuilderCanvas {
         secWrap.dataset.sectionId = secSchema.id;
 
         const controlBar = DomUtils.createElement('div', 'builder-section-control-bar');
+        const currentSecHex = this.extractHexColor(secSchema.layout.background);
         controlBar.innerHTML = `
           <div class="builder-sec-info">
             <span class="builder-sec-badge">Section ${secSchema.order}: ${secSchema.title}</span>
             <span class="builder-sec-type">[${secSchema.type.toUpperCase()}]</span>
           </div>
           <div class="builder-sec-actions-row">
+            <label class="btn-sec-color-quick" title="Bấm để chọn màu cầu vồng cho Section">
+              <input type="color" class="quick-sec-color-input" value="${currentSecHex}" />
+              <span>🎨 Màu nền</span>
+            </label>
             <button class="btn-add-pop-to-sec" data-sec="${secSchema.id}">+ Thêm Pop-up</button>
             <button class="btn-del-sec-canvas" data-sec="${secSchema.id}" title="Xóa Section">&times;</button>
           </div>
         `;
 
+        const secColorInput = controlBar.querySelector('.quick-sec-color-input') as HTMLInputElement;
+        secColorInput?.addEventListener('input', (e) => {
+          e.stopPropagation();
+          const newColor = secColorInput.value;
+          secSchema.layout.background = newColor;
+          secWrap.style.background = newColor;
+          secContainer.element.style.background = newColor;
+          this.state.emitter.emit('builder:section-bg-changed', { sectionId: secSchema.id, background: newColor });
+        });
+        secColorInput?.addEventListener('change', (e) => {
+          e.stopPropagation();
+          this.state.saveSnapshot();
+        });
+
         controlBar.querySelector('.btn-add-pop-to-sec')?.addEventListener('click', (e) => {
           e.stopPropagation();
-          this.state.activeSectionId = secSchema.id;
+          this.state.selectSection(secSchema.id);
           this.state.emitter.emit('builder:open-add-popup', secSchema.id);
         });
 
@@ -73,12 +92,9 @@ export class BuilderCanvas {
           }
         });
 
-        secWrap.addEventListener('click', () => {
-          this.state.activeSectionId = secSchema.id;
-          this.state.emitter.emit('builder:selection-changed', {
-            sectionId: secSchema.id,
-            blockId: this.state.activeBlockId
-          });
+        secWrap.addEventListener('click', (e) => {
+          if ((e.target as HTMLElement).closest('.builder-block-editable')) return;
+          this.state.selectSection(secSchema.id);
         });
 
         secWrap.appendChild(controlBar);
@@ -253,5 +269,13 @@ export class BuilderCanvas {
         }
       }
     });
+  }
+
+  private extractHexColor(bg?: string): string {
+    if (!bg) return '#0d1117';
+    if (bg.startsWith('#') && (bg.length === 7 || bg.length === 4)) return bg;
+    const hexMatch = bg.match(/#[0-9a-fA-F]{6}/);
+    if (hexMatch) return hexMatch[0];
+    return '#0d1117';
   }
 }

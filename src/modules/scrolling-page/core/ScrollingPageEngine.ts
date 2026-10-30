@@ -66,6 +66,10 @@ export class ScrollingPageEngine {
       this.isHeroScrubbing = false;
     });
 
+    this.emitter.on('scroll:completed', () => {
+      this.isHeroScrubbing = false;
+    });
+
     this.emitter.on('motion:video-rewound', () => {
       this.isHeroScrubbing = true;
     });
