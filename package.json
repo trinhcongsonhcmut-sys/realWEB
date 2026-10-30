@@ -1,19 +1,21 @@
 {
-  "name": "web3d-realestate-platform",
+  "name": "aura-scroll-video-platform",
   "private": true,
-  "version": "1.0.0",
+  "version": "2.0.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "extract": "powershell -ExecutionPolicy Bypass -File scripts/extract_frames.ps1",
+    "report": "node --experimental-strip-types scripts/send_executive_report.ts",
+    "report:send": "node --experimental-strip-types scripts/send_executive_report.ts --send",
+    "test:report": "node --experimental-strip-types scripts/test_telegram_reporting.ts"
   },
   "dependencies": {
-    "three": "^0.174.0",
     "lucide": "^0.475.0"
   },
   "devDependencies": {
-    "@types/three": "^0.174.0",
     "typescript": "^5.7.3",
     "vite": "^6.2.0"
   }

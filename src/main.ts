@@ -1,35 +1,88 @@
+/**
+ * main.ts
+ * Application entrypoint for AURA SCROLL platform.
+ * Integrates ScrollMotionEngine, VideoScrollerEngine, VideoScrollerUI, and scalable PopupManager.
+ */
+
 import './styles/main.css';
 import { EventEmitter } from './core/EventEmitter';
-import { RealEstateViewer } from './core/RealEstateViewer';
-import { UIController } from './ui/UIController';
-import { SAMPLE_PROPERTY } from './data/sampleProperty';
+import { ScrollMotionEngine } from './motion/ScrollMotionEngine';
+import { VideoScrollerEngine } from './video/VideoScrollerEngine';
+import { VideoScrollerUI } from './ui/VideoScrollerUI';
+import { PopupManager } from './popups/PopupManager';
 
-document.addEventListener('DOMContentLoaded', () => {
-  const container = document.getElementById('canvas-container');
-  const loadingScreen = document.getElementById('loading-screen');
+document.addEventListener('DOMContentLoaded', async () => {
+  const appElement = document.getElementById('app');
+  const canvasContainer = document.getElementById('canvas-container');
+  const popupsContainer = document.getElementById('popups-container');
 
-  if (!container) {
-    console.error('Canvas container not found');
+  if (!appElement || !canvasContainer) {
+    console.error('[AURA SCROLL] Required DOM containers not found');
     return;
   }
 
   // 1. Initialize Event Bus
   const emitter = new EventEmitter();
 
-  // 2. Initialize 3D Real Estate Engine
-  const viewer = new RealEstateViewer(container, SAMPLE_PROPERTY, emitter);
+  // 2. Initialize Video Scroller Canvas Engine
+  const scroller = new VideoScrollerEngine(canvasContainer, emitter);
 
-  // 3. Initialize Modern UI Controller
-  const ui = new UIController(document.getElementById('app')!, SAMPLE_PROPERTY, emitter, viewer);
+  // 3. Initialize Scroll Motion Physics Engine
+  const motion = new ScrollMotionEngine(emitter);
+  motion.bind(window);
 
-  // 4. Hide loading screen when ready
-  setTimeout(() => {
-    if (loadingScreen) {
-      loadingScreen.classList.add('hidden');
+  // 4. Initialize Clean Cinema UI (Drag & Drop support)
+  const ui = new VideoScrollerUI(appElement, motion, scroller, emitter);
+
+  // 5. Initialize Extensible Popups Manager (RenderAHouse showcase style)
+  let popupManager: PopupManager | null = null;
+  if (popupsContainer) {
+    popupManager = new PopupManager(popupsContainer, emitter);
+
+    // Handover: when user scrolls past the end of the video, glide into the popups section
+    emitter.on('scroll:completed', () => {
+      popupManager?.scrollIntoPopups();
+    });
+  }
+
+  // 6. Try high-performance WebP frame sequence first for 60-120 FPS playback
+  let isLoaded = false;
+  try {
+    const frameSuccess = await scroller.loadFrameSequence('/assets/frames/manifest.json');
+    if (frameSuccess) {
+      console.log('[AURA SCROLL] High-speed WebP frame sequence loaded successfully (60-120 FPS).');
+      isLoaded = true;
     }
-  }, 350);
+  } catch {
+    // Fallback to direct video file
+  }
+
+  // 7. Fallback: check for default video file in public/assets/videos/
+  if (!isLoaded) {
+    const candidatePaths = [
+      '/assets/videos/video_1.mp4',
+      '/assets/videos/video.mp4'
+    ];
+    for (const path of candidatePaths) {
+      try {
+        const checkRes = await fetch(path, { method: 'HEAD' });
+        if (checkRes.ok) {
+          const fileName = path.split('/').pop() || 'video.mp4';
+          console.log(`[AURA SCROLL] Auto-loading ${fileName}...`);
+          await scroller.loadVideoUrl(path, fileName);
+          break;
+        }
+      } catch {
+        // Continue to next candidate
+      }
+    }
+  }
 
   // Debug reference for testing if needed
-  (window as any).__viewer = viewer;
+  (window as any).__scroller = scroller;
+  (window as any).__motion = motion;
   (window as any).__ui = ui;
+  (window as any).__popupManager = popupManager;
+
+  console.log('[AURA SCROLL] Platform initialized with Extensible Popups System.');
 });

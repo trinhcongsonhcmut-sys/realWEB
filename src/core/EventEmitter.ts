@@ -1,9 +1,9 @@
-export type Listener<T = any> = (data: T) => void;
+export type Listener = (...args: any[]) => void;
 
 export class EventEmitter {
   private events: Map<string, Set<Listener>> = new Map();
 
-  public on<T = any>(event: string, listener: Listener<T>): () => void {
+  public on(event: string, listener: Listener): () => void {
     if (!this.events.has(event)) {
       this.events.set(event, new Set());
     }
@@ -11,7 +11,7 @@ export class EventEmitter {
     return () => this.off(event, listener);
   }
 
-  public off<T = any>(event: string, listener: Listener<T>): void {
+  public off(event: string, listener: Listener): void {
     const listeners = this.events.get(event);
     if (listeners) {
       listeners.delete(listener);
@@ -21,12 +21,12 @@ export class EventEmitter {
     }
   }
 
-  public emit<T = any>(event: string, data?: T): void {
+  public emit(event: string, ...args: any[]): void {
     const listeners = this.events.get(event);
     if (listeners) {
       listeners.forEach((listener) => {
         try {
-          listener(data);
+          listener(...args);
         } catch (err) {
           console.error(`Error in event listener for "${event}":`, err);
         }

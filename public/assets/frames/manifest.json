@@ -1,0 +1,10 @@
+﻿{
+    "sourceFile":  "video_1.mp4",
+    "version":  "1.0",
+    "totalFrames":  298,
+    "quality":  82,
+    "totalSizeMB":  28.86,
+    "pattern":  "/assets/frames/frame_%04d.webp",
+    "resolution":  "1080p",
+    "generatedAt":  "2026-10-30T13:46:38.0989012+07:00"
+}
