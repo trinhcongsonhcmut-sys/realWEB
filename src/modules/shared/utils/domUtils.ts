@@ -75,7 +75,7 @@ export class DomUtils {
 
       try {
         handle.setPointerCapture(e.pointerId);
-      } catch {}
+      } catch { }
 
       e.stopPropagation();
     };
@@ -109,7 +109,7 @@ export class DomUtils {
 
       try {
         handle.releasePointerCapture(e.pointerId);
-      } catch {}
+      } catch { }
 
       const parentEl = (element.offsetParent as HTMLElement) || element.parentElement || document.body;
       const rect = element.getBoundingClientRect();
@@ -167,7 +167,7 @@ export class DomUtils {
 
       try {
         handle.setPointerCapture(e.pointerId);
-      } catch {}
+      } catch { }
     };
 
     const onPointerMove = (e: PointerEvent) => {
@@ -211,7 +211,7 @@ export class DomUtils {
 
       try {
         handle.releasePointerCapture(e.pointerId);
-      } catch {}
+      } catch { }
 
       if (onEnd) {
         onEnd(curDeg);
@@ -298,7 +298,7 @@ export class DomUtils {
       const targetHandle = e.currentTarget as HTMLElement;
       try {
         targetHandle.setPointerCapture(e.pointerId);
-      } catch {}
+      } catch { }
     };
 
     const onPointerMove = (e: PointerEvent) => {
@@ -373,7 +373,7 @@ export class DomUtils {
       const targetHandle = e.currentTarget as HTMLElement;
       try {
         targetHandle.releasePointerCapture(e.pointerId);
-      } catch {}
+      } catch { }
 
       if (onEnd) {
         onEnd(curW, curH, curL, curT);

@@ -50,3 +50,4 @@ export class CustomContainerBlock extends BaseBlock<CustomContainerContent> {
     return card;
   }
 }
+

@@ -329,8 +329,8 @@ export class BuilderSidebar {
         </div>
         <div class="add-block-cards-grid">
           ${types
-            .map(
-              (t) => `
+        .map(
+          (t) => `
             <div class="add-block-card" data-type="${t.type}">
               <div class="add-block-icon">${getIcon(t.type)}</div>
               <div class="add-block-meta">
@@ -339,8 +339,8 @@ export class BuilderSidebar {
               </div>
             </div>
           `
-            )
-            .join('')}
+        )
+        .join('')}
         </div>
       </div>
     `;

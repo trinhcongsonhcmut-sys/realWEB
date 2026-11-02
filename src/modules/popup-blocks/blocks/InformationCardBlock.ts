@@ -70,3 +70,4 @@ export class InformationCardBlock extends BaseBlock<InfoCardContent> {
     return card;
   }
 }
+

@@ -31,3 +31,7 @@ Thumbs.db
 
 # Root temporary / screen recordings
 /20261025-0215-47.9504920.mp4
+
+# Subprojects & temporary checkpoints
+motionfolio-realestate/
+src_backup_checkpoint/

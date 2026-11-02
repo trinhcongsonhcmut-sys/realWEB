@@ -9,7 +9,7 @@ export default defineConfig(({ mode }) => {
       open: false,
       host: true,
       watch: {
-        ignored: ['**/*.glb', '**/*.gltf', '**/*.hdr', '**/*.bin', '**/*.mp4']
+        ignored: ['**/*.glb', '**/*.gltf', '**/*.hdr', '**/*.bin', '**/*.mp4', '**/motionfolio-realestate/**']
       }
     },
     plugins: [

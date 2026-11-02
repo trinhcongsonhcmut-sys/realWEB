@@ -31,7 +31,7 @@ export class BuilderCanvas {
     this.activeBlockInstances.forEach((inst) => {
       try {
         inst.dispose();
-      } catch (err) {}
+      } catch (err) { }
     });
     this.activeBlockInstances = [];
 
